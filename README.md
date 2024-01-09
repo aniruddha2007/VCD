@@ -1,6 +1,4 @@
-# Project Name
-
-[![License](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+# VCD
 
 ## Description
 
@@ -10,7 +8,6 @@ A brief description of the project.
 
 - [Usage](#usage)
 - [Contributing](#contributing)
-- [License](#license)
 - [Contact](#contact)
 
 ## Usage
@@ -21,11 +18,7 @@ Instructions on how to use the project and any relevant examples.
 
 Guidelines on how to contribute to the project.
 
-## License
-
-This project is licensed under the [MIT License](LICENSE).
-
 ## Contact
 
-- Email: <ani@aniruddhapandit.com>
+- Email: ani@aniruddhapandit.com
 - Project Link: [GitHub](https://github.com/aniruddha2007/VCD/)
