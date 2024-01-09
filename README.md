@@ -27,5 +27,5 @@ This project is licensed under the [MIT License](LICENSE).
 
 ## Contact
 
-- Email: ani@aniruddhapandit.com
+- Email: <ani@aniruddhapandit.com>
 - Project Link: [GitHub](https://github.com/aniruddha2007/VCD/)
