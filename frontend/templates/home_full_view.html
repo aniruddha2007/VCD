@@ -1,0 +1,107 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coal Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-light" data-bs-theme="light">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">VCD Admin</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+            <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('home') }}">General View</a>
+                </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    <div class="container">
+        <h1>Coal Database</h1>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Country</th>
+                    <th>Mine Name</th>
+                    <th>GCV ADB</th>
+                    <th>GAR</th>
+                    <th>GCV ARB</th>
+                    <th>NCV ARB</th>
+                    <th>TM ARB</th>
+                    <th>IM ADB</th>
+                    <th>Ash ADB</th>
+                    <th>Ash DB</th>
+                    <th>TS ADB</th>
+                    <th>TS DB</th>
+                    <th>Loading Port</th>
+                    <th>Vessel Type</th>
+                    <th>Loading Laycan</th>
+                    <th>COA</th>
+                    <th>Price USD</th>
+                    <th>Supplier</th>
+                    <th>VM ADB</th>
+                    <th>VM DB</th>
+                    <th>Fixed Carbon ADB</th>
+                    <th>Ash Fusion Temp IDT</th>
+                    <th>HGI</th>
+                    <th>Loading Rate</th>
+                    <th>Contact PIC</th>
+                    <th>Size Distribution 0-50mm</th>
+                    <th>Size Distribution above 50mm</th>
+                    <th>Size Distribution under 2mm</th>
+                    <th>Size Distribution under 0.5mm</th>
+                    <th>Potential Buyer</th>
+                    <th>Coal Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                    <tr>
+                        <td>{{ row.Country }}</td>
+                        <td>{{ row.MineName }}</td>
+                        <td>{{ row.GCV_ADB }}</td>
+                        <td>{{ row.GAR }}</td>
+                        <td>{{ row.GCV_ARB }}</td>
+                        <td>{{ row.NCV_ARB }}</td>
+                        <td>{{ row.TM_ARB }}</td>
+                        <td>{{ row.IM_ADB }}</td>
+                        <td>{{ row.Ash_ADB }}</td>
+                        <td>{{ row.Ash_DB }}</td>
+                        <td>{{ row.TS_ADB }}</td>
+                        <td>{{ row.TS_DB }}</td>
+                        <td>{{ row.LoadingPort }}</td>
+                        <td>{{ row.VesselType }}</td>
+                        <td>{{ row.LoadingLaycan }}</td>
+                        <td>{{ row.COA }}</td>
+                        <td>{{ row.Price_USD }}</td>
+                        <td>{{ row.Supplier }}</td>
+                        <td>{{ row.VM_ADB }}</td>
+                        <td>{{ row.VM_DB }}</td>
+                        <td>{{ row.FixedCarbon_ADB }}</td>
+                        <td>{{ row.AshFusionTemp_IDT }}</td>
+                        <td>{{ row.HGI }}</td>
+                        <td>{{ row.LoadingRate }}</td>
+                        <td>{{ row.ContactPIC }}</td>
+                        <td>{{ row.SizeDistribution_0_50mm }}</td>
+                        <td>{{ row.SizeDistribution_above50mm }}</td>
+                        <td>{{ row.SizeDistribution_under2mm }}</td>
+                        <td>{{ row.SizeDistribution_under0_5mm }}</td>
+                        <td>{{ row.PotentialBuyer }}</td>
+                        <td>{{ row.CoalType }}</td>
+                    </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
