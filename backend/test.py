@@ -1,64 +1,108 @@
-import pandas as pd
-from flask import Flask
-from flask_sqlalchemy import SQLAlchemy
+from mongoengine import connect, Document, StringField, BinaryField
+from pymongo.errors import ServerSelectionTimeoutError
+import time
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///coal_database.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
+# Configure MongoDB connection with timeout
+try:
+    connect('coal_database', host='mongodb://localhost:27017/', serverSelectionTimeoutMS=5000)
+    print("Connected to MongoDB.")
+except ServerSelectionTimeoutError:
+    print("Timeout: Unable to connect to MongoDB. Check your connection.")
 
-class CoalDatabase(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    Country = db.Column(db.String(50))
-    MineName = db.Column(db.String(50))
-    GCV_ADB = db.Column(db.String(50))
-    GAR = db.Column(db.String(50))
-    GCV_ARB = db.Column(db.String(50))
-    NCV_ARB = db.Column(db.String(50))
-    TM_ARB = db.Column(db.String(50))
-    IM_ADB = db.Column(db.String(50))
-    Ash_ADB = db.Column(db.String(50))
-    Ash_DB = db.Column(db.String(50))
-    TS_ADB = db.Column(db.String(50))
-    TS_DB = db.Column(db.String(50))
-    LoadingPort = db.Column(db.String(50))
-    VesselType = db.Column(db.String(50))
-    LoadingLaycan = db.Column(db.String(50))
-    COA = db.Column(db.String(50))
-    Price_USD = db.Column(db.String(50))
-    Supplier = db.Column(db.String(50))
-    VM_ADB = db.Column(db.String(50))
-    VM_DB = db.Column(db.String(50))
-    FixedCarbon_ADB = db.Column(db.String(50))
-    AshFusionTemp_IDT = db.Column(db.String(50))
-    HGI = db.Column(db.String(50))
-    LoadingRate = db.Column(db.String(50))
-    ContactPIC = db.Column(db.String(50))
-    SizeDistribution_0_50mm = db.Column(db.String(50))
-    SizeDistribution_above50mm = db.Column(db.String(50))
-    SizeDistribution_under2mm = db.Column(db.String(50))
-    SizeDistribution_under0_5mm = db.Column(db.String(50))
-    PotentialBuyer = db.Column(db.String(50))
-    CoalType = db.Column(db.String(50))
+pdf_file_path = "/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/Reference/coa.pdf"
 
-db.create_all()
-# Function to import data from CSV to SQLite database
-def import_csv_to_database(csv_file_path):
+# Define CoalDatabase schema
+class CoalDatabase(Document):
+    country = StringField(max_length=50)
+    mine_name = StringField(max_length=50)
+    gcv_adb = StringField(max_length=50)
+    gar = StringField(max_length=50)
+    gcv_arb = StringField(max_length=50)
+    ncv_arb = StringField(max_length=50)
+    tm_arb = StringField(max_length=50)
+    im_adb = StringField(max_length=50)
+    ash_adb = StringField(max_length=50)
+    ash_db = StringField(max_length=50)
+    ts_adb = StringField(max_length=50)
+    ts_db = StringField(max_length=50)
+    loading_port = StringField(max_length=50)
+    vessel_type = StringField(max_length=50)
+    loading_laycan = StringField(max_length=50)
+    coa_filename = StringField(max_length=255)
+    coa_content = BinaryField()
+    price_usd = StringField(max_length=50)
+    supplier = StringField(max_length=50)
+    vm_adb = StringField(max_length=50)
+    vm_db = StringField(max_length=50)
+    fixed_carbon_adb = StringField(max_length=50)
+    ash_fusion_temp_idt = StringField(max_length=50)
+    hgi = StringField(max_length=50)
+    loading_rate = StringField(max_length=50)
+    contact_pic = StringField(max_length=50)
+    size_distribution_0_50mm = StringField(max_length=50)
+    size_distribution_above_50mm = StringField(max_length=50)
+    size_distribution_under_2mm = StringField(max_length=50)
+    size_distribution_under_0_5mm = StringField(max_length=50)
+    potential_buyer = StringField(max_length=50)
+    coal_type = StringField(max_length=50)
+
+# Read COA file
+def read_pdf_to_binary(file_path):
     try:
-        data = pd.read_csv(csv_file_path)
-        
-        # Ensure the data columns match the database columns
-        if set(data.columns) == set(CoalDatabase.__table__.columns.keys()):
-            with app.app_context():
-                db.create_all()
-                data.to_sql('coal_database', db.engine, if_exists='replace', index=False)
-            print("Data imported successfully.")
-        else:
-            print("Column mismatch. Please check your CSV file and the database model.")
-    except Exception as e:
-        print(f"An error occurred: {str(e)}")
+        with open(file_path, 'rb') as file:
+            binary = file.read()
+            return binary
+    except FileNotFoundError:
+        print('File not found')
+        return None
 
-if __name__ == "__main__":
-    # Replace 'your_csv_file.csv' with the actual path to your CSV file
-    import_csv_to_database('/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/Reference/Coal Sources.csv')
-    app.run(debug=True)
+coa_content_data = read_pdf_to_binary(pdf_file_path)
+
+# Dummy data
+coal = CoalDatabase(
+    country='Brazil',
+    mine_name='123 Mines',
+    gcv_adb='5100',
+    gar='4900',
+    gcv_arb='5000',
+    ncv_arb='4800',
+    tm_arb='18',
+    im_adb='4600',
+    ash_adb='5200',
+    ash_db='5000',
+    ts_adb='4500',
+    ts_db='4300',
+    loading_port='Rio de Janeiro',
+    vessel_type='Handysize',
+    loading_laycan='12 days',
+    coa_filename='coa_123.pdf',
+    coa_content=coa_content_data,
+    price_usd='4800',
+    supplier='DEF Suppliers',
+    vm_adb='4300',
+    vm_db='4100',
+    fixed_carbon_adb='4600',
+    ash_fusion_temp_idt='5000',
+    hgi='4500',
+    loading_rate='4800',
+    contact_pic='Alice Doe',
+    size_distribution_0_50mm='5100',
+    size_distribution_above_50mm='2800',
+    size_distribution_under_2mm='4200',
+    size_distribution_under_0_5mm='1800',
+    potential_buyer='123 Corporation',
+    coal_type='Sub-bituminous'
+)
+
+# Save data to the 'coal_database' collection with loading system
+try:
+    print("Saving data to MongoDB...")
+    coal.save(write_concern={'w': 1, 'j': True, 'wtimeout': 1000})
+    print("Data saved successfully.")
+except ServerSelectionTimeoutError:
+    print("Timeout: Unable to save data. Check your connection.")
+except Exception as e:
+    print(f"Error: {e}")
+
+# Add a delay to see the console messages
+time.sleep(2)

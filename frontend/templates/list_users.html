@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Coal Database</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <nav class="navbar navbar-expand-lg bg-primary" data-bs-theme="dark">
+        <div class="container-fluid">
+          <a class="navbar-brand" href="#">VCD Admin</a>
+          <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+          </button>
+          <div class="collapse navbar-collapse" id="navbarNav">
+            <ul class="navbar-nav me-auto">
+                <li class="nav-item">
+                    <a class="nav-link" href="{{ url_for('home') }}">General View</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('home_full_view') }}">Advance View</a>
+                </li>
+                <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </nav>
+    <div class="container">
+        <h1>User Database</h1>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Company</th>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Phone</th>
+                    <th>Username</th>
+                </tr>
+            </thead>
+            <tbody>
+              {% for row in data %}
+                  <tr>
+                      <td>{{ row.company_name }}</td>
+                      <td>{{ row.name }}</td>
+                      <td>{{ row.email }}</td>
+                      <td>{{ row.phone }}</td>
+                      <td>{{ row.username }}</td>
+                  </tr>
+              {% endfor %}
+          </tbody>
+        </table>
+    </div>
+</body>
+</html>

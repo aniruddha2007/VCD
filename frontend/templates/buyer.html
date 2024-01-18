@@ -67,6 +67,48 @@
 
             <button type="submit" class="btn btn-primary">Search</button>
         </form>
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>Country</th>
+                    <th>Mine Name</th>
+                    <th>GCV ADB</th>
+                    <th>GAR</th>
+                    <th>TM ARB</th>
+                    <th>Loading Port</th>
+                    <th>Vessel Type</th>
+                    <th>Loading Laycan</th>
+                    <th>COA</th>
+                    <th>Price USD</th>
+                    <th>Supplier</th>
+                    <th>Loading Rate</th>
+                    <th>Contact PIC</th>
+                    <th>Potential Buyer</th>
+                    <th>Coal Type</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for row in data %}
+                <tr>
+                    <td>{{ row.country }}</td>
+                    <td>{{ row.mine_name }}</td>
+                    <td>{{ row.gcv_adb }}</td>
+                    <td>{{ row.gar }}</td>
+                    <td>{{ row.tm_arb }}</td>
+                    <td>{{ row.loading_port }}</td>
+                    <td>{{ row.vessel_type }}</td>
+                    <td>{{ row.loading_laycan }}</td>
+                    <td><a href="{{ url_for('download_coa', coa_id=row._id) }}">download</a></td>
+                    <td>{{ row.price_usd }}</td>
+                    <td>{{ row.supplier }}</td>
+                    <td>{{ row.loading_rate }}</td>
+                    <td>{{ row.contact_pic }}</td>
+                    <td>{{ row.potential_buyer }}</td>
+                    <td>{{ row.coal_type }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
     </div>
 
     <!-- Include Bootstrap JS and Popper.js if not already included -->

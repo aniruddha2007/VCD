@@ -16,9 +16,12 @@
           </button>
           <div class="collapse navbar-collapse" id="navbarNav">
             <ul class="navbar-nav me-auto">
-            <li class="nav-item">
+              <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('home') }}">General View</a>
-                </li>
+              </li>
+              <li class="nav-item">
+                <a class="nav-link" href="{{ url_for('list_users') }}">User Database</a>
+              </li>
               <li class="nav-item">
                 <a class="nav-link" href="{{ url_for('logout') }}">Logout</a>
               </li>
@@ -65,42 +68,42 @@
                 </tr>
             </thead>
             <tbody>
-                {% for row in data %}
-                    <tr>
-                        <td>{{ row.Country }}</td>
-                        <td>{{ row.MineName }}</td>
-                        <td>{{ row.GCV_ADB }}</td>
-                        <td>{{ row.GAR }}</td>
-                        <td>{{ row.GCV_ARB }}</td>
-                        <td>{{ row.NCV_ARB }}</td>
-                        <td>{{ row.TM_ARB }}</td>
-                        <td>{{ row.IM_ADB }}</td>
-                        <td>{{ row.Ash_ADB }}</td>
-                        <td>{{ row.Ash_DB }}</td>
-                        <td>{{ row.TS_ADB }}</td>
-                        <td>{{ row.TS_DB }}</td>
-                        <td>{{ row.LoadingPort }}</td>
-                        <td>{{ row.VesselType }}</td>
-                        <td>{{ row.LoadingLaycan }}</td>
-                        <td>{{ row.COA }}</td>
-                        <td>{{ row.Price_USD }}</td>
-                        <td>{{ row.Supplier }}</td>
-                        <td>{{ row.VM_ADB }}</td>
-                        <td>{{ row.VM_DB }}</td>
-                        <td>{{ row.FixedCarbon_ADB }}</td>
-                        <td>{{ row.AshFusionTemp_IDT }}</td>
-                        <td>{{ row.HGI }}</td>
-                        <td>{{ row.LoadingRate }}</td>
-                        <td>{{ row.ContactPIC }}</td>
-                        <td>{{ row.SizeDistribution_0_50mm }}</td>
-                        <td>{{ row.SizeDistribution_above50mm }}</td>
-                        <td>{{ row.SizeDistribution_under2mm }}</td>
-                        <td>{{ row.SizeDistribution_under0_5mm }}</td>
-                        <td>{{ row.PotentialBuyer }}</td>
-                        <td>{{ row.CoalType }}</td>
-                    </tr>
-                {% endfor %}
-            </tbody>
+              {% for row in data %}
+                  <tr>
+                      <td>{{ row.country }}</td>
+                      <td>{{ row.mine_name }}</td>
+                      <td>{{ row.gcv_adb }}</td>
+                      <td>{{ row.gar }}</td>
+                      <td>{{ row.gcv_arb }}</td>
+                      <td>{{ row.ncv_arb }}</td>
+                      <td>{{ row.tm_arb }}</td>
+                      <td>{{ row.im_adb }}</td>
+                      <td>{{ row.ash_adb }}</td>
+                      <td>{{ row.ash_db }}</td>
+                      <td>{{ row.ts_adb }}</td>
+                      <td>{{ row.ts_db }}</td>
+                      <td>{{ row.loading_port }}</td>
+                      <td>{{ row.vessel_type }}</td>
+                      <td>{{ row.loading_laycan }}</td>
+                      <td><a href="{{ url_for('download_coa', coa_id=row._id) }}">download</a></td>
+                      <td>{{ row.price_usd }}</td>
+                      <td>{{ row.supplier }}</td>
+                      <td>{{ row.vm_adb }}</td>
+                      <td>{{ row.vm_db }}</td>
+                      <td>{{ row.fixed_carbon_adb }}</td>
+                      <td>{{ row.ash_fusion_temp_idt }}</td>
+                      <td>{{ row.hgi }}</td>
+                      <td>{{ row.loading_rate }}</td>
+                      <td>{{ row.contact_pic }}</td>
+                      <td>{{ row.size_distribution_0_50mm }}</td>
+                      <td>{{ row.size_distribution_above_50mm }}</td>
+                      <td>{{ row.size_distribution_under_2mm }}</td>
+                      <td>{{ row.size_distribution_under_0_5mm }}</td>
+                      <td>{{ row.potential_buyer }}</td>
+                      <td>{{ row.coal_type }}</td>
+                  </tr>
+              {% endfor %}
+          </tbody>
         </table>
     </div>
 </body>
