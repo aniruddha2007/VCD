@@ -4,9 +4,8 @@ from werkzeug.security import generate_password_hash, check_password_hash
 from modules.functions import login_required, init_user_db, admin_required, buyer_required, seller_required
 from bson import ObjectId
 from modules.database import SellerData
-from pymongo.errors import ServerSelectionTimeoutError
-from mongoengine import connect
-
+import pandas as pd
+import json
 
 app = Flask(__name__, static_folder="../frontend/static", template_folder="../frontend/templates", static_url_path="/static")
 
@@ -22,9 +21,15 @@ mongo_user = PyMongo(app, uri=app.config['MONGO_URI_USER'])
 app.config['MONGO_URI_SELLER'] = 'mongodb://localhost:27017/seller_data'
 mongo_seller = PyMongo(app, uri=app.config['MONGO_URI_SELLER'])
 
+# MongoDB configuration for Index Data
+app.config['MONGO_URI_INDEX'] = 'mongodb://localhost:27017/index_database'
+mongo_index = PyMongo(app, uri=app.config['MONGO_URI_INDEX'])
+
 app.secret_key = "yF7QQh0QukGNA5MjvSJVp6MEVPrp6Uh3"
 _actual_secret_password = "VIRTUIT"
-
+# Initial values for index only for testing purposes
+aci_value = 151.0
+ici_value = 160.0
 # Function to convert binary data to a PDF file
 def save_binary_to_pdf(binary_data, output_path):
     try:
@@ -233,6 +238,42 @@ def download_coa(coa_id):
         flash("COA not found.")
         return redirect(url_for('home_full_view'))
 
+@app.route('/price_graph')
+def index():
+    return render_template('price_graph.html')
+
+# Route to fetch current index prices
+@app.route('/api/get_index_prices', methods=['GET'])
+def get_index_prices():
+    # Retrieve values from MongoDB or use initial values
+    aci = mongo_index.db.index_prices.find_one({}, {'aci': 1}, default={'aci': aci_value})['aci']
+    ici = mongo_index.db.index_prices.find_one({}, {'ici': 1}, default={'ici': ici_value})['ici']
+
+    return jsonify({'aci': aci, 'ici': ici})
+
+@app.route('/api/update_index_prices', methods=['POST', 'GET'])
+def update_index_prices():
+    try:
+        # Get the new ACI and ICI values from the request
+        new_aci = float(request.json.get('aci', 0.0))
+        new_ici = float(request.json.get('ici', 0.0))
+
+        # Validate that values are positive
+        if new_aci < 0 or new_ici < 0:
+            raise ValueError("Enter a positive value for prices.")
+
+        # Update the MongoDB collection
+        result = mongo_index.db.index_prices.update_one({}, {'$set': {'aci': new_aci, 'ici': new_ici}}, upsert=True)
+
+        if result.upserted_id:
+            return jsonify({"success": True, "message": "Index prices created successfully"})
+        else:
+            return jsonify({"success": True, "message": "Index prices updated successfully"})
+
+    except ValueError as ve:
+        return jsonify({"success": False, "message": str(ve)}), 400  # Bad Request
+    except Exception as e:
+        return jsonify({"success": False, "message": str(e)}), 500  # Internal Server Error
 # Run Flask App
 if __name__ == "__main__":
     init_user_db()
