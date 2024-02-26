@@ -1,4 +1,5 @@
 import requests
+from flask import request, jsonify
 
 # Ngrok URL (replace this with your actual ngrok URL)
 NGROK_URL = "https://f111-2001-b011-4008-31b9-d0ce-da88-1197-89fc.ngrok-free.app/"

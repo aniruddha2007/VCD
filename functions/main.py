@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify, send_file
 import requests
 from apscheduler.schedulers.background import BackgroundScheduler
-from line import send_broadcast_image, NGROK_URL, CHANNEL_ACCESS_TOKEN, sent_line_message
+from line import send_broadcast_image, NGROK_URL, sent_line_message
 from test_email import send_email
 from whatsapp import send_whatsapp_image
 
@@ -30,33 +30,39 @@ html_content = """
 </html>
 """
 
+# Scheduled task to trigger broadcasting of image message
+def scheduled_task():
+    # Scheduled task to trigger broadcasting of image message
+    image_url = f"{NGROK_URL}image.png"
+    send_email(subject,recipient_email,html_content,"uploads/table_image.png")
+    send_broadcast_image(image_url)
+    send_whatsapp_image(phone_number, image_url)
+
+# Webhook endpoint for Line
 @app.route('/webhook', methods=['POST'])
 def webhook():
     sent_line_message()
     return "This is the Line webhook endpoint."
 
-def scheduled_task():
-    # Scheduled task to trigger broadcasting of image message
-    image_url = f"{NGROK_URL}image.png"
-    send_email(subject,recipient_email,html_content,"uploads/table_image.png")
-    #send_broadcast_image(image_url)
-    #send_whatsapp_image(phone_number, image_url)
+# Webhook endpoint for WhatsApp
+@app.route('/whatsapp', methods=['POST'])
+def whatsapp():
+    return "This is the WhatsApp endpoint."
 
+# Serve the image on ngrok_url/image.png
 @app.route('/image.png')
 def serve_image():
     image_path = "uploads/table_image.png"  # Update with the correct file path
     return send_file(image_path, mimetype='image/png')
 
-@app.route('/test_broadcast_image', methods=['GET'])
-def test_broadcast_image():
-    # Endpoint to trigger broadcasting of image message for testing
-    image_url = f"{NGROK_URL}/image.png"
-    send_broadcast_image(image_url)
-    return "Image broadcast triggered successfully."
-
-@app.route('/whatsapp', methods=['POST'])
-def whatsapp():
-    return "This is the WhatsApp endpoint."
+#update the image by uploading new image
+@app.route('/update_image', methods=['POST'])
+def update_image():
+    image_url = request.json['image_url']
+    response = requests.get(image_url)
+    with open("uploads/table_image.png", "wb") as file:
+        file.write(response.content)
+    return jsonify({"message": "Image updated successfully."})
 
 if __name__ == '__main__':
     # Schedule the task to run every day at ____ using cron expression
