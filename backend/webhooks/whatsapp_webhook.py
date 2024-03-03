@@ -1,57 +1,23 @@
-
-# Function to send a WhatsApp image message
-# import requests
-# import json
-# from flask import Flask, request
-
-# access_token = "EAAEzvLRXAZCEBOwOZC8d4LXwIoJaId2qxq9PyIHaG2gLBXx3WYfNMcYOCJ6z9wMeLevK0Q8Ufz3vBfey3fgYvc5YH5e5bJIxxrADU42efndKOpxI79F1w5DlUJnk5CFoIpEoQP4JYDuqnB1mI9L431NXbYe4aK01zJ9UJZAiRjYC1XwrnNhCEt3QUnwyk7qJk2d0elrW7ek3P39GyX2qyF1vwzneXCE594ZD"
-
-# from_phone_number_id = "243106965553162"
-
-# def send_whatsapp_image(phone_number, image_url):
-#     url = f"https://graph.facebook.com/v19.0/{from_phone_number_id}/messages"
-
-#     headers = {
-#         "Authorization": f"Bearer {access_token}",
-#         "Content-Type": "application/json"
-#     }
-
-#     payload = {
-#         "messaging_product": "whatsapp",
-#         "recipient_type": "individual",
-#         "to": phone_number,
-#         "type": "image",
-#         "image": {
-#             "link": image_url
-#         }
-#     }
-
-#     response = requests.post(url, headers=headers, data=json.dumps(payload))
-
-#     return response.json()
-
+#Code to receive messages from whatsapp and store in respective collections of mongodb
 from flask import Flask, request, send_file
 import json
 import pymongo
 import re
 
+# Create a Flask app
 app = Flask(__name__)
 
-# Connect to MongoDB for storing general WhatsApp messages
+# Connect to MongoDB for storing Whatsapp Data
 client = pymongo.MongoClient("mongodb://localhost:27017/")
+# Connect to MongoDB for storing general WhatsApp messages a catch all
 db = client["messaging_data"]
 whatsapp_collection = db["whatsapp_messages"]
-
 # Connect to MongoDB for storing offer WhatsApp messages
-offer_client = pymongo.MongoClient("mongodb://localhost:27017/")
-offer_db = offer_client["offer_db"]
+offer_db = client["offer_db"]
 offer_collection = offer_db["offer_messages"]
-
 # Connect to MongoDB for storing inquire WhatsApp messages
-inquire_client = pymongo.MongoClient("mongodb://localhost:27017/")
-inquire_db = inquire_client["inquire_db"]
+inquire_db = client["inquire_db"]
 inquire_collection = inquire_db["inquire_messages"]
-
 # Connect to MongoDB for storing user data
 user_db = client["user_data"]
 user_collection = user_db["users"]
@@ -59,18 +25,15 @@ user_collection = user_db["users"]
 # Set your verification token
 VERIFY_TOKEN = "aniruddha"
 
+#Whatsapp Webhook
 @app.route('/whatsapp_webhook', methods=['POST'])
 def whatsapp_webhook():
     data = request.json
     store_whatsapp_data(data)
     return '', 200
 
-#host image, image path:/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/functions/main.py
-@app.route('/image', methods=['GET','POST'])
-def image():
-    return send_file('/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/functions/offer_table.png', mimetype='image/png')
-
-
+#Functions
+#Store Whatsapp Data
 def store_whatsapp_data(data):
     # Extract relevant fields and store in database
     for entry in data.get('entry', []):
@@ -90,17 +53,21 @@ def store_whatsapp_data(data):
                         else:
                             store_general_message(text, sender, timestamp, user)
 
+#Check if the message is an offer message
 def is_offer_message(text):
     # Check if the text matches the offer message pattern
     pattern = r"offer: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
     return re.match(pattern, text)
 
+#Check if the message is an inquire message
 def is_inquire_message(text):
     # Check if the text matches the inquire message pattern
     pattern = r"inquire: GAR (\d+)-(\d+) Ash (\d+)-(\d+) Volume (\d+) Laycan \((.*?)\) Port (\w+)"
-
     return re.match(pattern, text)
 
+# re pattern template for offer/inquire message is "offer/inquire: GAR___ Ash___ Volume___ Laycan (___) Port___"
+
+#Find or create user------Also add a line userid and match it to wa_id---------
 def find_or_create_user(wa_id, text):
     # Check if the user exists in the database
     user = user_collection.find_one({'wa_id': wa_id})
@@ -113,15 +80,16 @@ def find_or_create_user(wa_id, text):
         user_collection.insert_one({'wa_id': wa_id, 'category': category})
         return user_collection.find_one({'wa_id': wa_id})
 
+#Store offer message
 def store_offer_message(text, sender, timestamp, user):
     # Extract offer details from the text
     match = is_offer_message(text)
     if match:
-        min_gar = match.group(1)
-        max_gar = match.group(2)
-        min_ash = match.group(3)
-        max_ash = match.group(4)
-        volume = match.group(5)
+        min_gar = match.group(1) # Extract min GAR
+        max_gar = match.group(2) # Extract max GAR
+        min_ash = match.group(3) # Extract min Ash
+        max_ash = match.group(4) # Extract max Ash
+        volume = match.group(5) # Extract volume
         laycan = match.group(6).strip()  # Laycan part
         port = match.group(7).strip()  # Port part
         # Store offer message with user information
@@ -138,15 +106,16 @@ def store_offer_message(text, sender, timestamp, user):
             'port': port
         })
 
+#Store inquire message
 def store_inquire_message(text, sender, timestamp, user):
     # Extract inquire details from the text
     match = is_inquire_message(text)
     if match:
-        min_gar = match.group(1)
-        max_gar = match.group(2)
-        min_ash = match.group(3)
-        max_ash = match.group(4)
-        volume = match.group(5)
+        min_gar = match.group(1) # Extract min GAR
+        max_gar = match.group(2) # Extract max GAR
+        min_ash = match.group(3) # Extract min Ash
+        max_ash = match.group(4) # Extract max Ash
+        volume = match.group(5) # Extract volume
         laycan = match.group(6).strip()  # Laycan part
         port = match.group(7).strip()  # Port part
         # Store inquire message with user information
@@ -163,6 +132,7 @@ def store_inquire_message(text, sender, timestamp, user):
             'port': port
         })
 
+#Store general message Catch all function
 def store_general_message(text, sender, timestamp, user):
     # Store general message with user information
     whatsapp_collection.insert_one({
@@ -171,6 +141,3 @@ def store_general_message(text, sender, timestamp, user):
         'user': user,
         'text': text
     })
-
-if __name__ == '__main__':
-    app.run(debug=True)
