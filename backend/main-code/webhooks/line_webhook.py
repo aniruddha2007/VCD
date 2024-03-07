@@ -1,10 +1,11 @@
 import requests
-from flask import Flask, request
+from flask import Flask, request, Blueprint
 import pymongo
 import re
+from communications.line_message import send_line_message
 
 # Create a Flask app
-app = Flask(__name__)
+line_blueprint = Blueprint('blueprint', __name__)
 
 # MongoDB connection
 client = pymongo.MongoClient("mongodb://localhost:27017/")
@@ -14,6 +15,8 @@ user_db = client["user_data"]
 user_collection = user_db["users"]
 offer_db = client["offer_db"]
 offer_collection = offer_db["offer_messages"]
+today_offer_collection = offer_db['today_offer_collection']
+selected_offer_collection = offer_db["selected_offer_messages"]
 inquire_db = client["inquire_db"]
 inquire_collection = inquire_db["inquire_messages"]
 
@@ -26,6 +29,9 @@ def is_offer_message(text):
 def is_inquire_message(text):
     pattern = r"inquire: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
     return re.match(pattern, text)
+
+def is_offer_selection_message(text):
+    return text.startswith('select: ')
 
 # Store line data
 def store_line_data(text, user_id, timestamp):
@@ -97,7 +103,7 @@ def store_inquire_message(text, user_id, timestamp):
         inquire_collection.insert_one(inquire_data)
 
 # Webhook for Line
-@app.route('/line_webhook', methods=['POST'])
+@line_blueprint.route('/line_webhook', methods=['POST'])
 def line_webhook():
     data = request.json
     events = data.get('events', [])
@@ -119,6 +125,9 @@ def line_webhook():
         elif is_inquire_message(text):
             store_inquire_message(text, user_id, timestamp)
             print(f"Inquiry message stored for user: {user_id}")
+        elif is_offer_selection_message(text):
+            offer_selection_message(text, user_id, timestamp)
+            print(f"Offer selection message processed for user: {user_id}")
         else:
             # Store line data only if it's not an offer or inquiry
             store_line_data(text, user_id, timestamp)
@@ -126,5 +135,40 @@ def line_webhook():
 
     return '', 200
 
-if __name__ == '__main__':
-    app.run(debug=True)
+# Function to handle offer selection message
+# Function to handle offer selection message
+def offer_selection_message(text, user_id, timestamp):
+    try:
+        match = re.match(r"select: (\d+)", text)
+        if match:
+            order_number = int(match.group(1))
+            # Find the offer with the matching order number in today's offers
+            selected_offer = today_offer_collection.find_one({"order": int(order_number)})
+            if selected_offer:
+                offer_id = selected_offer.get('offer_id')
+                existing_offer = selected_offer_collection.find_one({
+                    'user_id': user_id,
+                    'offer_id': offer_id
+                })
+                if not existing_offer:
+                    # Store the selected offer in the selected_offer_collection
+                    selected_offer_collection.insert_one({
+                        'order': order_number,
+                        'user_id': user_id,
+                        'timestamp': timestamp,
+                        'offer_id': offer_id
+                    })
+                    # Inform the user about the successful selection via Line
+                    send_line_message(user_id, f"Offer {order_number} selected successfully for user {user_id}.")
+                else:
+                    # Inform the user that the offer has already been selected
+                    send_line_message(user_id, f"Offer {order_number} is already selected for user {user_id}.")
+            else:
+                # Inform the user that the selected offer was not found
+                send_line_message(user_id, "Selected offer not found. Please select a valid offer.")
+        else:
+            # Inform the user about the invalid format of the selection message
+            send_line_message(user_id, "Invalid offer selection format. Please use 'select: <order_number>'.")
+    except Exception as e:
+        # Inform the user about an error during offer selection processing
+        send_line_message(user_id, "An error occurred while processing your offer selection. Please try again later.")
