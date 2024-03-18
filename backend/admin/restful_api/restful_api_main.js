@@ -2,12 +2,13 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const offer_api = require('./offer_restful_api');
 const user_api = require('./user_restful_api');
+const cors = require('cors');
 
 
 // Create a new express application
 const app = express();
 app.use(bodyParser.json());
-
+app.use(cors());
 // Middleware for API key authentication  FYI need to use x-api-key in the header
 function authenticateApiKey(req, res, next) {
     const apiKey = req.headers['x-api-key'];
