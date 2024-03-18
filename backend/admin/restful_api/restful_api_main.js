@@ -2,6 +2,7 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const offer_api = require('./offer_restful_api');
 const user_api = require('./user_restful_api');
+const inquire_api = require('./inquire_restful_api');
 const cors = require('cors');
 
 
@@ -36,6 +37,8 @@ app.use(authenticateApiKey);
 app.use('/offer_db', offer_api);
 
 app.use('/user_data', user_api);
+
+app.use('/inquire_db', inquire_api);
 
 // Error classes
 class NotFoundError extends Error {

@@ -31,7 +31,7 @@ router.post('/offers/create', async (req, res, next) => {
         let missingFields = [];
         if (!sender) missingFields.push('sender');
         if (!timestamp) missingFields.push('timestamp');
-        //if (!user) missingFields.push('user');
+        if (!user) missingFields.push('user');
         if (!min_gar) missingFields.push('min_gar');
         if (!max_gar) missingFields.push('max_gar');
         if (!min_ash) missingFields.push('min_ash');
@@ -55,19 +55,36 @@ router.post('/offers/create', async (req, res, next) => {
         const existingOffer = await offer_messages.findOne({
             sender,
             timestamp,
-            'user._id': user._id
+            'user._id': user._id // For backward compatibility
         });
-        if (existingOffer) {
-            return res.status(200).json({
-                message: 'Entry already exists'
+
+        // If user._id is not present, check for user.wa_id
+        if (!existingOffer && user.wa_id) {
+            const existingOfferByWaId = await offer_messages.findOne({
+                sender,
+                timestamp,
+                'user.wa_id': user.wa_id
+            });
+
+            if (existingOfferByWaId) {
+                return res.status(200).json({
+                    message: 'Entry already exists'
+                });
+            }
+        }
+
+        // If neither user._id nor user.wa_id is present, proceed with insertion
+        if (!existingOffer) {
+            const new_offer = req.body;
+            const result = await offer_messages.insertOne(new_offer);
+
+            return res.json({
+                id: result.insertedId
             });
         }
 
-        const new_offer = req.body;
-        const result = await offer_messages.insertOne(new_offer);
-
-        res.json({
-            id: result.insertedId
+        return res.status(200).json({
+            message: 'Entry already exists'
         });
     } catch (error) {
         next(error);

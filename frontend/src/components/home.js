@@ -4,6 +4,8 @@ import "bootstrap/dist/css/bootstrap.css";
 
 const Home = () => {
     const [entries, setEntries] = useState([]);
+    const [todayOffers, setTodayOffers] = useState([]);
+    const [todayInquires, setTodayInquires] = useState([]);
 
     useEffect(() => {
         async function fetchEntries() {
@@ -23,37 +25,39 @@ const Home = () => {
 
                 const offersData = await offersResponse.json();
 
-                // Fetch data for Users
-                const usersResponse = await fetch('http://localhost:3000/user_data/users/read', {
+                // Fetch data for Today Offers
+                const todayOffersResponse = await fetch('http://localhost:3000/offer_db/today_offer/read', {
                     headers: {
                         'x-api-key': apiKey
                     }
                 });
 
-                if (!usersResponse.ok) {
-                    throw new Error(`An error occurred while fetching users: ${usersResponse.statusText}`);
+                if (!todayOffersResponse.ok) {
+                    throw new Error(`An error occurred while fetching today's offers: ${todayOffersResponse.statusText}`);
                 }
 
-                const usersData = await usersResponse.json();
+                const todayOffersData = await todayOffersResponse.json();
 
-                // // Fetch data for Inquire (Assuming endpoint URL is available)
-                // const inquireResponse = await fetch('http://localhost:3000/offer_db/inquire/read', {
-                //     headers: {
-                //         'x-api-key': apiKey
-                //     }
-                // });
+                // Fetch data for Today Inquires
+                const todayInquiresResponse = await fetch('http://localhost:3000/inquire_db/today_inquires/read', {
+                    headers: {
+                        'x-api-key': apiKey
+                    }
+                });
 
-                // if (!inquireResponse.ok) {
-                //     throw new Error(`An error occurred while fetching inquire: ${inquireResponse.statusText}`);
-                // }
+                if (!todayInquiresResponse.ok) {
+                    throw new Error(`An error occurred while fetching today's inquires: ${todayInquiresResponse.statusText}`);
+                }
 
-                // const inquireData = await inquireResponse.json();
+                const todayInquiresData = await todayInquiresResponse.json();
 
                 setEntries([
                     { category: 'Offers', count: offersData.length },
-                    { category: 'Users', count: usersData.length },
-                    // { category: 'Inquire', count: inquireData.length }
+                    { category: 'Today Offers', count: todayOffersData.length },
+                    { category: 'Today Inquires', count: todayInquiresData.length }
                 ]);
+                setTodayOffers(todayOffersData);
+                setTodayInquires(todayInquiresData);
             } catch (error) {
                 console.error('Error fetching entries:', error);
             }
@@ -78,6 +82,48 @@ const Home = () => {
                         </div>
                     </div>
                 ))}
+            </div>
+            <h2>Today's Offers</h2>
+            <div className="table-responsive">
+                <table className="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Order</th>
+                            <th>Offer ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {todayOffers.map((offer, index) => (
+                            <tr key={index}>
+                                <td>{index + 1}</td>
+                                <td>{offer.order}</td>
+                                <td>{typeof offer.offer_id === 'object' ? offer.offer_id['$oid'] : offer.offer_id}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
+            </div>
+            <h2>Today's Inquires</h2>
+            <div className="table-responsive">
+                <table className="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Order</th>
+                            <th>Inquire ID</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {todayInquires.map((inquire, index) => (
+                            <tr key={index}>
+                                <td>{index + 1}</td>
+                                <td>{inquire.order}</td>
+                                <td>{typeof inquire.inquire_id === 'object' ? inquire.inquire_id['$oid'] : inquire.inquire_id}</td>
+                            </tr>
+                        ))}
+                    </tbody>
+                </table>
             </div>
         </div>
     );
