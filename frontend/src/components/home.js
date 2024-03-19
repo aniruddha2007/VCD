@@ -1,11 +1,18 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import "bootstrap/dist/css/bootstrap.css";
+import ServerActivity from './server_activity.js';
+
 
 const Home = () => {
     const [entries, setEntries] = useState([]);
     const [todayOffers, setTodayOffers] = useState([]);
     const [todayInquires, setTodayInquires] = useState([]);
+
+    // States for system health
+    const [flaskStatus, setFlaskStatus] = useState(null);
+    const [expressStatus, setExpressStatus] = useState(null);
+    const [mongodbStatus, setMongoDBStatus] = useState(null);
 
     useEffect(() => {
         async function fetchEntries() {
@@ -58,6 +65,10 @@ const Home = () => {
                 ]);
                 setTodayOffers(todayOffersData);
                 setTodayInquires(todayInquiresData);
+                setFlaskStatus(ServerActivity.flaskStatus);
+                setExpressStatus(ServerActivity.expressStatus);
+                setMongoDBStatus(ServerActivity.mongodbStatus);
+                console.log(ServerActivity.flaskStatus, ServerActivity.expressStatus, ServerActivity.mongodbStatus);
             } catch (error) {
                 console.error('Error fetching entries:', error);
             }
@@ -65,6 +76,17 @@ const Home = () => {
 
         fetchEntries();
     }, []);
+
+    // Determine overall system health based on individual statuses
+    const systemHealth = () => {
+        if (flaskStatus === 'running' && expressStatus === 'running' && mongodbStatus === 'open') {
+            console.log(flaskStatus, expressStatus, mongodbStatus);
+            return 'Healthy';
+        } else {
+            console.log(flaskStatus, expressStatus, mongodbStatus);
+            return 'Unhealthy';
+        }
+    };
 
     return (
         <div>
@@ -82,6 +104,16 @@ const Home = () => {
                         </div>
                     </div>
                 ))}
+                <div className="row justify-center">
+                <div className="col-md-4">
+                    <div className={`card ${systemHealth() === 'Healthy' ? 'bg-success' : 'bg-danger'}`}>
+                        <div className="card-body">
+                            <h5 className="card-title">System Health</h5>
+                            <p className="card-text">Status: {systemHealth()}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
             </div>
             <h2>Today's Offers</h2>
             <div className="table-responsive">

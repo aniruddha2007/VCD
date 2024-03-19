@@ -70,18 +70,19 @@ def handle_incoming_messages(data):
                         sender = message.get('from')
                         print(f"Received message '{text}' from number '{sender}'")
                         timestamp = message.get('timestamp')
-                        handle_message(text, sender, timestamp)
+                        user = find_or_create_user(sender, text)
+                        handle_message(text, sender, timestamp, user)
 
 # Function to handle different types of messages
-def handle_message(text, sender, timestamp):
+def handle_message(text, sender, timestamp, user):
     if is_offer_selection(text):
         offer_selection_message(text, sender, timestamp)
     elif is_offer_message(text):
-        store_offer_message(text, sender, timestamp)
+        store_offer_message(text, sender, timestamp, user)
     elif is_inquire_message(text):
-        store_inquire_message(text, sender, timestamp)
+        store_inquire_message(text, sender, timestamp, user)
     else:
-        store_general_message(text, sender, timestamp)
+        store_general_message(text, sender, timestamp, user)
 
 # Function to check if the message is an offer selection
 def is_offer_selection(text):
@@ -131,7 +132,7 @@ def is_offer_message(text):
 #Check if the message is an inquire message
 def is_inquire_message(text):
     # Check if the text matches the inquire message pattern
-    pattern = r"inquire: GAR (\d+)-(\d+) Ash (\d+)-(\d+) Volume (\d+) Laycan \((.*?)\) Port (\w+)"
+    pattern = r"inquire: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
     return re.match(pattern, text)
 
 # re pattern template for offer/inquire message is "offer/inquire: GAR___ Ash___ Volume___ Laycan (___) Port___"
@@ -201,7 +202,7 @@ def store_inquire_message(text, sender, timestamp, user):
             'port': port
         })
 
-#Store general message Catch all function
+# Store general message Catch all function
 def store_general_message(text, sender, timestamp, user):
     # Store general message with user information
     whatsapp_collection.insert_one({

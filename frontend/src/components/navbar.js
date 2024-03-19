@@ -22,6 +22,9 @@ export default function Navbar() {
                             <li className="nav-item">
                                 <NavLink className="nav-link" to="/inquire">Inquire</NavLink>
                             </li>
+                            <li className="nav-item">
+                                <NavLink className="nav-link" to="/server_activity">Server Activity</NavLink>
+                            </li>
                             {/* Add more links here */}
                         </ul>
                     </div>

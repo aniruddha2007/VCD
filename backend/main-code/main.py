@@ -1,4 +1,4 @@
-from flask import Flask, send_file
+from flask import Flask, send_file, jsonify
 from apscheduler.schedulers.background import BackgroundScheduler
 from pytz import timezone
 import matplotlib
@@ -21,7 +21,7 @@ user_db = client["user_data"]
 user_collection = user_db["users"]
 
 #for testing ngrok url
-ngrok_url = "https://ce15-2001-b011-4008-1f3d-4d39-e511-56af-b367.ngrok-free.app/"
+ngrok_url = "https://aa60-2001-b011-4008-1466-ac9a-ff49-e425-411a.ngrok-free.app/"
 image_url = f"{ngrok_url}/offers/table.png"
 
 # Create a Flask app
@@ -111,6 +111,10 @@ def inquiry_table():
     image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/inquiries/table.png'  # Update with the correct file path
     return send_file(image_path, mimetype='image/png')
 
+#Flask route to check if the server is running
+@app.route('/api/v1/health', methods=['GET'])
+def health():
+    return jsonify({'message': 'Flask server is running!'})
 
 #Main
 if __name__ == '__main__':

@@ -7,6 +7,9 @@ import UserList from "./components/user_list.js";
 import OfferList from "./components/offer_list.js";
 import InquireList from "./components/inquire_list.js";
 import Home from "./components/home.js";
+import ServerActivity from "./components/server_activity.js";
+// eslint-disable-next-line
+import Test from "./components/test.js";
 
 
 const App = () => {
@@ -18,6 +21,8 @@ const App = () => {
             <Route path="/users" element={<UserList />} />
             <Route path="/offers" element={<OfferList />} />
             <Route path="/inquire" element={<InquireList />} />
+            <Route path="/server_activity" element={<ServerActivity />} />
+            {/* <Route path="/test" element={<Test />} /> */}
         </Routes>
         </div>
     );
