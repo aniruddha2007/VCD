@@ -136,7 +136,6 @@ def line_webhook():
     return '', 200
 
 # Function to handle offer selection message
-# Function to handle offer selection message
 def offer_selection_message(text, user_id, timestamp):
     try:
         match = re.match(r"select: (\d+)", text)
