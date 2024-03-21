@@ -9,6 +9,8 @@ const {
 const uri = "mongodb://localhost:27017";
 const client = new MongoClient(uri);
 
+/* This code snippet is defining CRUD (Create, Read, Update, Delete) operations for a user database
+using Express.js and MongoDB. Here's a breakdown of each operation: */
 //CRUD operations for User's Database
 //Create
 router.post('/users/create', async (req, res, next) => {

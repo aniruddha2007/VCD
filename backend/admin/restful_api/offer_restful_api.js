@@ -10,6 +10,8 @@ const {
 const uri = "mongodb://localhost:27017";
 const client = new MongoClient(uri);
 
+/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
+collection named 'offer_messages' in the 'offer_db' database. Here is a summary of each operation: */
 //CRUD operations for offer_db/offers
 //Create
 router.post('/offers/create', async (req, res, next) => {
@@ -157,6 +159,9 @@ router.delete('/offers/delete/:id', async (req, res, next) => {
     }
 });
 
+/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
+collection named `today_offer_collection` in the `offer_db` database. Here is a breakdown of each
+operation: */
 //CRUD for offer_db/today_offer_collection
 //CRUD operations
 //Create
@@ -271,6 +276,9 @@ router.delete('/today_offer/delete/:id', async (req, res, next) => {
     }
 });
 
+/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
+collection named 'selected_offer_messages' in the 'offer_db' database. Here is a summary of each
+operation: */
 //CRUD for offer_db/selected_offers
 //CRUD operations
 //Create

@@ -10,6 +10,9 @@ const router = express.Router();
 const uri = "mongodb://localhost:27017";
 const client = new MongoClient(uri);
 
+/* This code block defines CRUD (Create, Read, Update, Delete) operations for a collection named
+`inquire_messages` in a MongoDB database named `inquire_db`. Here's a breakdown of what each part of
+the code does: */
 // CRUD operations for inquire_db/inquires
 // Create
 router.post('/inquires/create', async (req, res, next) => {
@@ -135,6 +138,9 @@ router.delete('/inquires/delete/:id', async (req, res, next) => {
     }
 });
 
+/* This code block defines CRUD (Create, Read, Update, Delete) operations for a collection named
+`today_inquires_collection` in a MongoDB database named `inquire_db`. Here's a breakdown of what
+each part of the code does: */
 // CRUD for inquire_db/today_inquires_collection
 // Create
 router.post('/today_inquires/create', async (req, res, next) => {

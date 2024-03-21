@@ -7,6 +7,8 @@ const cors = require('cors');
 const axios = require('axios');
 const mongoose = require('mongoose');
 
+/* The code snippet you provided is connecting the Express application to a MongoDB database. Here's a
+breakdown of what it does: */
 // Connect to MongoDB
 mongoose.connect('mongodb://localhost:27017/messaging_data', {
         useNewUrlParser: true,
@@ -20,6 +22,25 @@ const app = express();
 app.use(bodyParser.json());
 app.use(cors());
 
+/**
+ * The function `authenticateApiKey` is a middleware used for API key authentication in a Node.js
+ * application.
+ * @param req - The `req` parameter in the `authenticateApiKey` function stands for the request object.
+ * It contains information about the HTTP request made to the server, including headers, parameters,
+ * body, and more. In this case, the function is extracting the value of the `x-api-key` header from
+ * the
+ * @param res - The `res` parameter in the `authenticateApiKey` function stands for the response object
+ * in Node.js. It is used to send a response back to the client making the request. In this case, the
+ * function is checking for the presence and validity of an API key in the request headers, and if
+ * @param next - The `next` parameter in the `authenticateApiKey` function is a callback function that
+ * is used to pass control to the next middleware function in the request-response cycle. When called,
+ * it tells Express to move on to the next middleware function in the chain. This allows you to chain
+ * multiple middleware functions together
+ * @returns In the provided code snippet, if the API key is not provided or is invalid, a response with
+ * an error message and a status code of 401 (Unauthorized) is being returned. If the API key is valid,
+ * the `next()` function is called to proceed to the next middleware or route handler in the
+ * application.
+ */
 // Middleware for API key authentication
 function authenticateApiKey(req, res, next) {
     const apiKey = req.headers['x-api-key'];
@@ -42,6 +63,9 @@ function authenticateApiKey(req, res, next) {
     next();
 }
 
+/* The code snippet you provided is setting up health check endpoints for different components of your
+application, namely Flask, Express, and MongoDB. These endpoints are used to verify the health
+status of each component. */
 // Health check endpoint for Flask
 app.get('/api/v1/health/flask', async (req, res) => {
     try {
