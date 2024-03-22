@@ -3,6 +3,7 @@ from flask import Flask, request, send_file, Blueprint
 import json
 import pymongo
 import re
+import datetime
 from communications.whatsapp_message import send_whatsapp_message
 
 # Create a Flask app
@@ -69,9 +70,19 @@ def handle_incoming_messages(data):
                         text = message.get('text', {}).get('body', '')
                         sender = message.get('from')
                         print(f"Received message '{text}' from number '{sender}'")
-                        timestamp = message.get('timestamp')
+                        timestamp_og = message.get('timestamp')
+                        # Convert string timestamp to integer
+                        timestamp_og_int = int(timestamp_og)
+                        timestamp = convert_timestamp(timestamp_og_int)
                         user = find_or_create_user(sender, text)
                         handle_message(text, sender, timestamp, user)
+
+#Function to convert timestamp
+def convert_timestamp(timestamp_og_int):
+    dt_object = datetime.datetime.fromtimestamp(timestamp_og_int)
+    # Format datetime object as a readable date and time
+    readable_date_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return readable_date_time
 
 # Function to handle different types of messages
 def handle_message(text, sender, timestamp, user):

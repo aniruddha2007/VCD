@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
+//eslint-disable-next-line
 import { Link } from "react-router-dom";
 
-const InquireList = (props) => {
+const SelectedOfferList = (props) => {
   const { record } = props;
   // console.log("Record:", record);
 
@@ -15,47 +16,24 @@ const InquireList = (props) => {
     );
   }
 
-  // Construct GAR range
-  const garRange = `${record.min_gar || ""} - ${record.max_gar || ""}`;
-  // Construct ASH range
-  const ashRange = `${record.min_ash || ""} - ${record.max_ash || ""}`;
-
   return (
     <tr>
+      <td>{record.order}</td>
       <td>{record.sender || record.user_id}</td>
       <td>{record.timestamp}</td>
       <td>{record._id}</td>
-      <td>{garRange}</td>
-      <td>{ashRange}</td>
-      <td>{record.volume || ""}</td>
-      <td>{record.laycan || ""}</td>
-      <td>{record.port || ""}</td>
-      <td>
-        <Link className="btn btn-link" to={`/edit/${record._id?.$oid}`}>
-          Edit
-        </Link>{" "}
-        |
-        <button
-          className="btn btn-link"
-          onClick={() => {
-            props.deleteRecord(record._id?.$oid);
-          }}
-        >
-          Delete
-        </button>
-      </td>
     </tr>
   );
 };
 
-const InquireRecordList = () => {
+const SelectedOfferRecordList = () => {
   const [records, setRecords] = useState([]);
 
   useEffect(() => {
-    async function getInquires() {
+    async function getSelectedOffers() {
       try {
         const response = await fetch(
-          `http://localhost:3000/inquire_db/inquires/read`,
+          `http://localhost:3000/offer_db/selected_offers/read`,
           {
             headers: {
               "x-api-key": "aniruddhaqwerty1234", // Replace 'your_api_key' with your actual API key
@@ -67,27 +45,30 @@ const InquireRecordList = () => {
           throw new Error(`An error occurred: ${response.statusText}`);
         }
 
-        const inquires = await response.json();
+        const selectedOffers = await response.json();
         // console.log("Inquires:", inquires);
-        setRecords(inquires);
+        setRecords(selectedOffers);
       } catch (error) {
         window.alert(error.message);
       }
     }
 
-    getInquires();
+    getSelectedOffers();
 
     return;
   }, []);
 
   async function deleteRecord(id) {
     try {
-      await fetch(`http://localhost:3000/inquire_db/inquires/delete/${id}`, {
-        method: "DELETE",
-        headers: {
-          "x-api-key": "aniruddhaqwerty1234", // Replace 'your_api_key' with your actual API key
+      await fetch(
+        `http://localhost:3000/offer_db/selected_offers/delete/${id}`,
+        {
+          method: "DELETE",
+          headers: {
+            "x-api-key": "aniruddhaqwerty1234", // Replace 'your_api_key' with your actual API key
+          },
         },
-      });
+      );
 
       const newRecords = records.filter((el) => el._id.$oid !== id);
       setRecords(newRecords);
@@ -98,23 +79,19 @@ const InquireRecordList = () => {
 
   return (
     <div>
-      <h3>Inquire List</h3>
+      <h3>Selected Offers</h3>
       <table className="table-striped table" style={{ marginTop: 20 }}>
         <thead>
           <tr>
+            <th>Order</th>
             <th>Sender</th>
             <th>Timestamp</th>
             <th>Order ID</th>
-            <th>GAR</th>
-            <th>ASH</th>
-            <th>Volume</th>
-            <th>Laycan</th>
-            <th>Port</th>
           </tr>
         </thead>
         <tbody>
           {records.map((record, index) => (
-            <InquireList
+            <SelectedOfferList
               record={record}
               deleteRecord={deleteRecord}
               key={index}
@@ -126,4 +103,4 @@ const InquireRecordList = () => {
   );
 };
 
-export default InquireRecordList;
+export default SelectedOfferRecordList;

@@ -21,7 +21,7 @@ user_db = client["user_data"]
 user_collection = user_db["users"]
 
 #for testing ngrok url
-ngrok_url = "https://aa60-2001-b011-4008-1466-ac9a-ff49-e425-411a.ngrok-free.app/"
+ngrok_url = "https://145e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app"
 image_url = f"{ngrok_url}/offers/table.png"
 
 # Create a Flask app
@@ -34,7 +34,7 @@ app.register_blueprint(line_blueprint, name='line')
 def send_offer_message_to_buyers_whatsapp(image_url):
     # Get the list of buyer phone numbers
     buyer_phone_numbers = get_buyer_phone_number()
-    
+
     # Iterate over each buyer's phone number
     for phone_number in buyer_phone_numbers:
         if phone_number:  # Check if phone number is not None or False
@@ -70,8 +70,8 @@ def send_inquiry_message_to_sellers_line(image_url):
 
 #scheduler functions to run
 def do_shit():
-    ngrok_url = "https://ce15-2001-b011-4008-1f3d-4d39-e511-56af-b367.ngrok-free.app/"
-    
+    ngrok_url = "https://145e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app"
+
     # Get unique buyer and seller user IDs
     buyer_user_ids = set(get_buyer_user_ids())
     seller_user_ids = set(get_seller_user_ids())
@@ -94,7 +94,7 @@ def schedule_generation():
     # Schedule inquiry and offer table generation at 9:30 am every day
     scheduler.add_job(generate_inquiry_table, 'cron', hour=10, minute=7, second=0)
     scheduler.add_job(generate_offer_table, 'cron', hour=10, minute=7, second=3)
-    
+
 # Start the scheduler
 schedule_generation()
 scheduler.start()

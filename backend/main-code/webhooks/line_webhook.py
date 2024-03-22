@@ -2,6 +2,7 @@ import requests
 from flask import Flask, request, Blueprint
 import pymongo
 import re
+import datetime
 from communications.line_message import send_line_message
 
 # Create a Flask app
@@ -38,7 +39,7 @@ def store_line_data(text, user_id, timestamp):
 
     if is_offer_message(text) or is_inquire_message(text):
         return
-    
+
     message_data = {
         "text": text,
         "user_id": user_id,
@@ -111,7 +112,9 @@ def line_webhook():
         message = event.get('message', {})
         text = message.get('text', '')
         user_id = event.get('source', {}).get('userId', '')
-        timestamp = event.get('timestamp', '')
+        timestamp_og = event.get('timestamp', '')
+        timestamp_og_int = int(timestamp_og) / 1000
+        timestamp = convert_timestamp(timestamp_og_int)
         print(f"Received message: {text} from user: {user_id}")
 
         # Find or create user
@@ -134,6 +137,13 @@ def line_webhook():
             print(f"Line message stored for user: {user_id}")
 
     return '', 200
+
+# Function to convert timestamp
+def convert_timestamp(timestamp_og_int):
+    dt_object = datetime.datetime.fromtimestamp(timestamp_og_int)
+    # Format datetime object as a readable date and time
+    readable_date_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return readable_date_time
 
 # Function to handle offer selection message
 def offer_selection_message(text, user_id, timestamp):
