@@ -21,7 +21,7 @@ user_db = client["user_data"]
 user_collection = user_db["users"]
 
 #for testing ngrok url
-ngrok_url = "https://145e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app"
+ngrok_url = "https://8d3e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app/"
 image_url = f"{ngrok_url}/offers/table.png"
 
 # Create a Flask app
@@ -70,7 +70,7 @@ def send_inquiry_message_to_sellers_line(image_url):
 
 #scheduler functions to run
 def do_shit():
-    ngrok_url = "https://145e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app"
+    ngrok_url = "https://8d3e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app/"
 
     # Get unique buyer and seller user IDs
     buyer_user_ids = set(get_buyer_user_ids())
@@ -110,6 +110,11 @@ def offer_table():
 def inquiry_table():
     image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/inquiries/table.png'  # Update with the correct file path
     return send_file(image_path, mimetype='image/png')
+
+#define COA pdf route
+@app.route('/offer/coa/<order_id>.pdf')
+def coa_pdf(order_id):
+    return send_file(f'/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offer/coa/{order_id}.pdf', mimetype='application/pdf')
 
 #Flask route to check if the server is running
 @app.route('/api/v1/health', methods=['GET'])

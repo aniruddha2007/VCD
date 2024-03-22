@@ -73,6 +73,37 @@ def send_whatsapp_message(phone_number, message):
         print("An error occurred while sending WhatsApp message:", str(e))
         return None
 
+#Send Document message
+def send_whatsapp_document(phone_number, document_url):
+    from_phone_number_id = "264895430037819"
+    url = f"https://graph.facebook.com/v19.0/{from_phone_number_id}/messages"
+    access_token = "EAAFiaqaNBdcBO5fw75rvTe9RNfcoSxAeBr8CbU9v63IawIBOr6XPW6YSXcx75as2zNzH563OGahoikF0JKQ0yY84BrlC8XJoZAVps10CnXZC7iCaKrkpU9D3W6QpNZCUh2OLrbCVPDqt2TELxKLZAz2UaZCr6jNzGNB61hZAQNvU10xarasZAVA2A3y6Vc9G0EMAcvj5QJM1ZAm3UTBcX24QYvqMZBMsZD"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+    payload = {
+        "messaging-product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone_number,
+        "type": "document",
+        "document": {
+            "link": document_url
+        }
+    }
+
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response_data = response.json()
+        if response.status_code == 200:
+            print("WhatsApp document message sent successfully to:", phone_number)
+        else:
+            print("Failed to send WhatsApp Document message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending WhatsApp Document message:", str(e))
+        return None
+
 #Get buyer phone number
 def get_buyer_phone_number():
     try:

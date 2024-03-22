@@ -12,11 +12,6 @@ const Home = () => {
   // eslint-disable-next-line
   const [selectedOffers, setSelectedOffers] = useState([]);
 
-  // States for system health
-  const [flaskStatus, setFlaskStatus] = useState(null);
-  const [expressStatus, setExpressStatus] = useState(null);
-  const [mongodbStatus, setMongoDBStatus] = useState(null);
-
   useEffect(() => {
     async function fetchEntries() {
       try {
@@ -117,14 +112,6 @@ const Home = () => {
         ]);
         setTodayOffers(todayOffersData);
         setTodayInquires(todayInquiresData);
-        setFlaskStatus(ServerActivity.flaskStatus);
-        setExpressStatus(ServerActivity.expressStatus);
-        setMongoDBStatus(ServerActivity.mongodbStatus);
-        console.log(
-          ServerActivity.flaskStatus,
-          ServerActivity.expressStatus,
-          ServerActivity.mongodbStatus,
-        );
       } catch (error) {
         console.error("Error fetching entries:", error);
       }
@@ -132,21 +119,6 @@ const Home = () => {
 
     fetchEntries();
   }, []);
-
-  // Determine overall system health based on individual statuses
-  const systemHealth = () => {
-    if (
-      flaskStatus === "running" &&
-      expressStatus === "running" &&
-      mongodbStatus === "open"
-    ) {
-      console.log(flaskStatus, expressStatus, mongodbStatus);
-      return "Healthy";
-    } else {
-      console.log(flaskStatus, expressStatus, mongodbStatus);
-      return "Unhealthy";
-    }
-  };
 
   return (
     <div>
@@ -169,14 +141,7 @@ const Home = () => {
         ))}
         <div className="row justify-center">
           <div className="col-md-4">
-            <div
-              className={`card ${systemHealth() === "Healthy" ? "bg-success" : "bg-success"}`}
-            >
-              <div className="card-body">
-                <h5 className="card-title">System Health</h5>
-                <p className="card-text">Status: {"Healthy"}</p>
-              </div>
-            </div>
+            <ServerActivity />
           </div>
         </div>
       </div>

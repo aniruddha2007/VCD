@@ -5,6 +5,8 @@ import pymongo
 import re
 import datetime
 from communications.whatsapp_message import send_whatsapp_message
+from functions.whatsapp_functions import convert_timestamp, is_offer_selection, is_offer_message, is_inquire_message
+#Some functions moved to whatsapp_functions.py
 
 # Create a Flask app
 whatsapp_blueprint = Blueprint('blueprint', __name__)
@@ -77,12 +79,6 @@ def handle_incoming_messages(data):
                         user = find_or_create_user(sender, text)
                         handle_message(text, sender, timestamp, user)
 
-#Function to convert timestamp
-def convert_timestamp(timestamp_og_int):
-    dt_object = datetime.datetime.fromtimestamp(timestamp_og_int)
-    # Format datetime object as a readable date and time
-    readable_date_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
-    return readable_date_time
 
 # Function to handle different types of messages
 def handle_message(text, sender, timestamp, user):
@@ -94,10 +90,6 @@ def handle_message(text, sender, timestamp, user):
         store_inquire_message(text, sender, timestamp, user)
     else:
         store_general_message(text, sender, timestamp, user)
-
-# Function to check if the message is an offer selection
-def is_offer_selection(text):
-    return re.match(r"select: (\d+)", text)
 
 # Function to handle offer selection message
 def offer_selection_message(text, sender, timestamp):
@@ -134,19 +126,6 @@ def offer_selection_message(text, sender, timestamp):
     except Exception as e:
         send_whatsapp_message(sender, "An error occurred while processing your offer selection. Please try again later.")
 
-#Check if the message is an offer message
-def is_offer_message(text):
-    # Check if the text matches the offer message pattern
-    pattern = r"offer: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
-    return re.match(pattern, text)
-
-#Check if the message is an inquire message
-def is_inquire_message(text):
-    # Check if the text matches the inquire message pattern
-    pattern = r"inquire: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
-    return re.match(pattern, text)
-
-# re pattern template for offer/inquire message is "offer/inquire: GAR___ Ash___ Volume___ Laycan (___) Port___"
 
 #Find or create user------Also add a line userid and match it to wa_id---------
 def find_or_create_user(wa_id, text):

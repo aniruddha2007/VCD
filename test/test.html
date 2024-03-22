@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+        <title>COA Upload Test</title>
+    </head>
+    <body>
+        <h1>COA Upload Test</h1>
+        <input type="file" id="pdfInput" />
+        <button onclick="uploadPdf()">Upload PDF</button>
+        <script>
+            async function uploadPdf() {
+                const pdfInput = document.getElementById("pdfInput");
+                const pdfFile = pdfInput.files[0];
+                if (!pdfFile) {
+                    alert("Please select a PDF file to upload");
+                    return;
+                }
+
+                const formData = new FormData();
+                formData.append("pdf", pdfFile);
+                formData.append("orderID", "your_order_id_here");
+
+                try {
+                    const response = await fetch(
+                        "http://localhost:3000/offer_coa_upload/upload",
+                        {
+                            method: "POST",
+                            body: formData,
+                            headers: {
+                                "x-api-key": "aniruddhaqwerty1234", // Your API key here
+                            },
+                        },
+                    );
+
+                    if (!response.ok) {
+                        const errorMessage = await response.text();
+                        throw new Error(`Upload failed: ${errorMessage}`);
+                    }
+
+                    const result = await response.json();
+                    alert("PDF uploaded successfully!");
+                    console.log("File uploaded:", result);
+                } catch (error) {
+                    console.error("Error uploading PDF:", error);
+                    alert(
+                        "Failed to upload PDF. Check the console for details.",
+                    );
+                }
+            }
+        </script>
+    </body>
+</html>

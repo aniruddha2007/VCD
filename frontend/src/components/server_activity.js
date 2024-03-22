@@ -66,14 +66,14 @@ const ServerActivity = () => {
 
   return (
     <div className="container mt-4">
-      <h1 className="mb-4">Server Activity</h1>
+      <h3 className="mb-4">Server Status</h3>
       <div className="row">
         <div className="col-md-4">
           <div
             className={`card ${flaskStatus === "running" ? "bg-success" : "bg-danger"} mb-4`}
           >
             <div className="card-body">
-              <h5 className="card-title">Line And Whatsapps Services</h5>
+              <h5 className="card-title">Communication Services</h5>
               <p className="card-text">Status: {flaskStatus}</p>
             </div>
           </div>
@@ -83,7 +83,7 @@ const ServerActivity = () => {
             className={`card ${expressStatus === "running" ? "bg-success" : "bg-danger"} mb-4`}
           >
             <div className="card-body">
-              <h5 className="card-title">API Services</h5>
+              <h5 className="card-title">Express API Services</h5>
               <p className="card-text">Status: {expressStatus}</p>
             </div>
           </div>
