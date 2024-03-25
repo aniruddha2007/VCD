@@ -14,19 +14,41 @@ const client = new MongoClient(uri);
 collection named 'offer_messages' in the 'offer_db' database. Here is a summary of each operation: */
 //CRUD operations for offer_db/offers
 //Create
+```
+// Sample request body for creating a new offer message
+{
+    "sender": "admin",
+    "timestamp": "2024-03-25 10:31:35",
+    "user": {
+        "userId": "ADMIN",
+        "category": "admin"
+    },
+    "country": "Russia",
+    "mine_name": "Elga HCC Select",
+    "typical_gar": "6200",
+    "typical_ash": "16",
+    "typical_sulphur": "NaN",
+    "volume": "NaN",
+    "laycan": "NaN",
+    "port": "Vanino/ Vostochny",
+    "status": "NaN"
+}
+```
 router.post('/offers/create', async (req, res, next) => {
     try {
         const {
             sender,
             timestamp,
             user,
-            min_gar,
-            max_gar,
-            min_ash,
-            max_ash,
+            country,
+            mine_name,
+            typical_gar,
+            typical_ash,
+            typical_sulphur,
             volume,
             laycan,
-            port
+            port,
+            status
         } = req.body;
 
         // Check if data is complete
@@ -34,13 +56,15 @@ router.post('/offers/create', async (req, res, next) => {
         if (!sender) missingFields.push('sender');
         if (!timestamp) missingFields.push('timestamp');
         if (!user) missingFields.push('user');
-        if (!min_gar) missingFields.push('min_gar');
-        if (!max_gar) missingFields.push('max_gar');
-        if (!min_ash) missingFields.push('min_ash');
-        if (!max_ash) missingFields.push('max_ash');
+        if (!country) missingFields.push('country');
+        if (!mine_name) missingFields.push('mine_name');
+        if (!typical_gar) missingFields.push('typical_gar');
+        if (!typical_ash) missingFields.push('typical_ash');
+        if (!typical_sulphur) missingFields.push('typical_sulphur');
         if (!volume) missingFields.push('volume');
         if (!laycan) missingFields.push('laycan');
         if (!port) missingFields.push('port');
+        if (!status) missingFields.push('status');
 
         if (missingFields.length > 0) {
             return res.status(400).json({

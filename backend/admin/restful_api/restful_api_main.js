@@ -12,7 +12,7 @@ const mongoose = require("mongoose");
 breakdown of what it does: */
 // Connect to MongoDB
 mongoose
-  .connect("mongodb://localhost:27017/messaging_data", {
+  .connect("mongodb://localhost:27017/offer_db", {
     useNewUrlParser: true,
     useUnifiedTopology: true,
   })

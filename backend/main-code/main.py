@@ -21,7 +21,7 @@ user_db = client["user_data"]
 user_collection = user_db["users"]
 
 #for testing ngrok url
-ngrok_url = "https://8d3e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app/"
+ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
 image_url = f"{ngrok_url}/offers/table.png"
 
 # Create a Flask app
@@ -70,7 +70,7 @@ def send_inquiry_message_to_sellers_line(image_url):
 
 #scheduler functions to run
 def do_shit():
-    ngrok_url = "https://8d3e-2001-b011-4008-152f-9d3d-226e-5135-10a7.ngrok-free.app/"
+    ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
 
     # Get unique buyer and seller user IDs
     buyer_user_ids = set(get_buyer_user_ids())
