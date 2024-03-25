@@ -1,1103 +1,927 @@
-//inquire_restful_api.js
-const express = require('express');
-const {
-    MongoClient,
-    ObjectId
-} = require("mongodb");
+from flask import Flask, send_file, jsonify
+from apscheduler.schedulers.background import BackgroundScheduler
+from pytz import timezone
+import matplotlib
+matplotlib.use('Agg')
+import pymongo
 
-const router = express.Router();
+# Import Blueprints and generate functions
+from webhooks.whatsapp_webhook import whatsapp_blueprint
+from webhooks.line_webhook import line_blueprint
+from functions.inquire_create import generate_inquiry_table
+from functions.offer_create import generate_offer_table
 
-// Replace the uri string with your connection string.
-const uri = "mongodb://localhost:27017";
-const client = new MongoClient(uri);
+#Import Send messages function
+from communications.whatsapp_message import send_whatsapp_image, get_buyer_phone_number, get_seller_phone_number
+from communications.line_message import send_line_image, get_buyer_user_ids, get_seller_user_ids
 
-/* This code block defines CRUD (Create, Read, Update, Delete) operations for a collection named
-`inquire_messages` in a MongoDB database named `inquire_db`. Here's a breakdown of what each part of
-the code does: */
-// CRUD operations for inquire_db/inquires
-// Create
-router.post('/inquires/create', async (req, res, next) => {
-    try {
-        await client.connect();
-        const {
-            sender,
-            timestamp,
-            user,
-            min_gar,
-            max_gar,
-            min_ash,
-            max_ash,
-            volume,
-            laycan,
-            port
-        } = req.body;
+#Database
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+user_db = client["user_data"]
+user_collection = user_db["users"]
 
-        const requiredFields = {
-            sender,
-            timestamp,
-            user,
-            min_gar,
-            max_gar,
-            min_ash,
-            max_ash,
-            volume,
-            laycan,
-            port
-        };
-        const missingFields = Object.entries(requiredFields).filter(([key, value]) => !value).map(([key]) => key);
+#for testing ngrok url
+ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
+image_url = f"{ngrok_url}/offers/table.png"
 
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
+# Create a Flask app
+app = Flask(__name__)
+# Register Blueprints with unique names
+app.register_blueprint(whatsapp_blueprint, name='whatsapp')
+app.register_blueprint(line_blueprint, name='line')
+
+# Send Offer Message Whatsapp
+def send_offer_message_to_buyers_whatsapp(image_url):
+    # Get the list of buyer phone numbers
+    buyer_phone_numbers = get_buyer_phone_number()
+
+    # Iterate over each buyer's phone number
+    for phone_number in buyer_phone_numbers:
+        if phone_number:  # Check if phone number is not None or False
+            print("Sending offer to WhatsApp user:", phone_number)
+            send_whatsapp_image(phone_number, image_url)
+        else:
+            print("Skipping invalid phone number")
+
+#Send Offer Message Line
+def send_offer_message_to_buyers_line(image_url):
+    buyer_user_ids = get_buyer_user_ids()
+
+    for user_id in buyer_user_ids:
+        print("sending offer to line user:", user_id)
+        send_line_image(user_id, image_url)
+
+# Send Inquiry Message Whatsapp
+def send_inquiry_message_to_sellers_whatsapp(image_url):
+    seller_phone_numbers = get_seller_phone_number()
+    for phone_number in seller_phone_numbers:
+        if phone_number:
+            print("Sending inquiry to WhatsApp user:", phone_number)
+            send_whatsapp_image(phone_number, image_url)
+        else:
+            print("Skipping invalid phone number for seller")
+
+#Send Inquiry Message Line
+def send_inquiry_message_to_sellers_line(image_url):
+    seller_user_ids = get_seller_user_ids()
+    for user_id in seller_user_ids:
+        print("sending inquiry to line user:", user_id)
+        send_line_image(user_id, image_url)
+
+#scheduler functions to run
+def do_shit():
+    ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
+
+    # Get unique buyer and seller user IDs
+    buyer_user_ids = set(get_buyer_user_ids())
+    seller_user_ids = set(get_seller_user_ids())
+
+    # Send offer messages
+    for user_id in buyer_user_ids:
+        image_url = f"{ngrok_url}/offers/table.png"
+        send_offer_message_to_buyers_whatsapp(image_url)
+        send_offer_message_to_buyers_line(image_url)
+
+    # Send inquiry messages
+    for user_id in seller_user_ids:
+        image_url = f"{ngrok_url}/inquiries/table.png"
+        send_inquiry_message_to_sellers_whatsapp(image_url)
+        send_inquiry_message_to_sellers_line(image_url)
+
+# Define a scheduler
+scheduler = BackgroundScheduler(timezone=timezone('Asia/Taipei'))
+def schedule_generation():
+    # Schedule inquiry and offer table generation at 9:30 am every day
+    scheduler.add_job(generate_inquiry_table, 'cron', hour=10, minute=7, second=0)
+    scheduler.add_job(generate_offer_table, 'cron', hour=10, minute=7, second=3)
+
+# Start the scheduler
+schedule_generation()
+scheduler.start()
+
+#define offer_table route
+@app.route('/offers/table.png')
+def offer_table():
+    image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offers/table.png'  # Update with the correct file path
+    return send_file(image_path, mimetype='image/png')
+
+#define inquiry_table route
+@app.route('/inquiries/table.png')
+def inquiry_table():
+    image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/inquiries/table.png'  # Update with the correct file path
+    return send_file(image_path, mimetype='image/png')
+
+#define COA pdf route
+@app.route('/offer/coa/<order_id>.pdf')
+def coa_pdf(order_id):
+    return send_file(f'/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offer/coa/{order_id}.pdf', mimetype='application/pdf')
+
+#Flask route to check if the server is running
+@app.route('/api/v1/health', methods=['GET'])
+def health():
+    return jsonify({'message': 'Flask server is running!'})
+
+#Main
+if __name__ == '__main__':
+    #only uncomment these lines if you want to generate the tables for testing
+    #do_shit()
+    #generate_inquiry_table()
+    #generate_offer_table()
+    # Run the Flask app
+    app.run(debug=True)
+import requests
+from flask import Flask, request, Blueprint
+import pymongo
+import re
+import datetime
+from communications.line_message import send_line_message
+
+# Create a Flask app
+line_blueprint = Blueprint('blueprint', __name__)
+
+# MongoDB connection
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+db = client["messaging_data"]
+line_collection = db["line_messages"]
+user_db = client["user_data"]
+user_collection = user_db["users"]
+offer_db = client["offer_db"]
+offer_collection = offer_db["offer_messages"]
+today_offer_collection = offer_db['today_offer_collection']
+selected_offer_collection = offer_db["selected_offer_messages"]
+inquire_db = client["inquire_db"]
+inquire_collection = inquire_db["inquire_messages"]
+
+# Check if the message is an offer message
+def is_offer_message(text):
+    pattern = r"offer: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
+    return re.match(pattern, text)
+
+# Check if the message is an inquire message
+def is_inquire_message(text):
+    pattern = r"inquire: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+)"
+    return re.match(pattern, text)
+
+def is_offer_selection_message(text):
+    return text.startswith('select: ')
+
+# Store line data
+def store_line_data(text, user_id, timestamp):
+
+    if is_offer_message(text) or is_inquire_message(text):
+        return
+
+    message_data = {
+        "text": text,
+        "user_id": user_id,
+        "timestamp": timestamp
+    }
+    line_collection.insert_one(message_data)
+    print(f"Message stored in line_messages: {text} from user: {user_id}")
+
+# Find or create user
+def find_or_create_user(user_id, text):
+    user = user_collection.find_one({'userId': user_id})
+    if not user:
+        category = 'buyer' if 'buyer' in text.lower() else 'seller'
+        user_collection.insert_one({'userId': user_id, 'category': category})
+
+# Store offer message
+def store_offer_message(text, user_id, timestamp):
+    match = is_offer_message(text)
+    if match:
+        min_gar = match.group(1)
+        max_gar = match.group(2)
+        min_ash = match.group(3)
+        max_ash = match.group(4)
+        volume = match.group(5)
+        laycan = match.group(6).strip()
+        port = match.group(7).strip()
+        offer_data = {
+            'user_id': user_id,
+            'timestamp': timestamp,
+            'min_gar': min_gar,
+            'max_gar': max_gar,
+            'min_ash': min_ash,
+            'max_ash': max_ash,
+            'volume': volume,
+            'laycan': laycan,
+            'port': port
         }
+        offer_collection.insert_one(offer_data)
 
-        const database = client.db('inquire_db');
-        const inquire_messages = database.collection('inquire_messages');
-
-        const existingInquire = await inquire_messages.findOne({
-            sender,
-            timestamp,
-            'user._id': user._id
-        });
-
-        if (!existingInquire && user.wa_id) {
-            const existingInquireByWaId = await inquire_messages.findOne({
-                sender,
-                timestamp,
-                'user.wa_id': user.wa_id
-            });
-            if (existingInquireByWaId) return res.status(200).json({
-                message: 'Entry already exists'
-            });
+# Store inquire message
+def store_inquire_message(text, user_id, timestamp):
+    match = is_inquire_message(text)
+    if match:
+        min_gar = match.group(1)
+        max_gar = match.group(2)
+        min_ash = match.group(3)
+        max_ash = match.group(4)
+        volume = match.group(5)
+        laycan = match.group(6).strip()
+        port = match.group(7).strip()
+        inquire_data = {
+            'user_id': user_id,
+            'timestamp': timestamp,
+            'min_gar': min_gar,
+            'max_gar': max_gar,
+            'min_ash': min_ash,
+            'max_ash': max_ash,
+            'volume': volume,
+            'laycan': laycan,
+            'port': port
         }
+        inquire_collection.insert_one(inquire_data)
 
-        if (!existingInquire) {
-            const result = await inquire_messages.insertOne(req.body);
-            return res.json({
-                id: result.insertedId
-            });
-        }
+# Webhook for Line
+@line_blueprint.route('/line_webhook', methods=['POST'])
+def line_webhook():
+    data = request.json
+    events = data.get('events', [])
+    for event in events:
+        message = event.get('message', {})
+        text = message.get('text', '')
+        user_id = event.get('source', {}).get('userId', '')
+        timestamp_og = event.get('timestamp', '')
+        timestamp_og_int = int(timestamp_og) / 1000
+        timestamp = convert_timestamp(timestamp_og_int)
+        print(f"Received message: {text} from user: {user_id}")
 
-        return res.status(200).json({
-            message: 'Entry already exists'
-        });
-    } catch (error) {
-        next(error);
+        # Find or create user
+        find_or_create_user(user_id, text)
+        print(f"User {user_id} processed.")
+
+        # Check if the message is an offer or inquiry
+        if is_offer_message(text):
+            store_offer_message(text, user_id, timestamp)
+            print(f"Offer message stored for user: {user_id}")
+        elif is_inquire_message(text):
+            store_inquire_message(text, user_id, timestamp)
+            print(f"Inquiry message stored for user: {user_id}")
+        elif is_offer_selection_message(text):
+            offer_selection_message(text, user_id, timestamp)
+            print(f"Offer selection message processed for user: {user_id}")
+        else:
+            # Store line data only if it's not an offer or inquiry
+            store_line_data(text, user_id, timestamp)
+            print(f"Line message stored for user: {user_id}")
+
+    return '', 200
+
+# Function to convert timestamp
+def convert_timestamp(timestamp_og_int):
+    dt_object = datetime.datetime.fromtimestamp(timestamp_og_int)
+    # Format datetime object as a readable date and time
+    readable_date_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return readable_date_time
+
+# Function to handle offer selection message
+def offer_selection_message(text, user_id, timestamp):
+    try:
+        match = re.match(r"select: (\d+)", text)
+        if match:
+            order_number = int(match.group(1))
+            # Find the offer with the matching order number in today's offers
+            selected_offer = today_offer_collection.find_one({"order": int(order_number)})
+            if selected_offer:
+                offer_id = selected_offer.get('offer_id')
+                existing_offer = selected_offer_collection.find_one({
+                    'user_id': user_id,
+                    'offer_id': offer_id
+                })
+                if not existing_offer:
+                    # Store the selected offer in the selected_offer_collection
+                    selected_offer_collection.insert_one({
+                        'order': order_number,
+                        'user_id': user_id,
+                        'timestamp': timestamp,
+                        'offer_id': offer_id
+                    })
+                    # Inform the user about the successful selection via Line
+                    send_line_message(user_id, f"Offer {order_number} selected successfully for user {user_id}.")
+                else:
+                    # Inform the user that the offer has already been selected
+                    send_line_message(user_id, f"Offer {order_number} is already selected for user {user_id}.")
+            else:
+                # Inform the user that the selected offer was not found
+                send_line_message(user_id, "Selected offer not found. Please select a valid offer.")
+        else:
+            # Inform the user about the invalid format of the selection message
+            send_line_message(user_id, "Invalid offer selection format. Please use 'select: <order_number>'.")
+    except Exception as e:
+        # Inform the user about an error during offer selection processing
+        send_line_message(user_id, "An error occurred while processing your offer selection. Please try again later.")
+#Code to receive messages from whatsapp and store in respective collections of mongodb
+from flask import Flask, request, send_file, Blueprint
+import json
+import pymongo
+import re
+import datetime
+from communications.whatsapp_message import send_whatsapp_message
+from functions.whatsapp_functions import convert_timestamp, is_offer_selection, is_offer_message, is_inquire_message
+#Some functions moved to whatsapp_functions.py
+
+# Create a Flask app
+whatsapp_blueprint = Blueprint('blueprint', __name__)
+
+# Connect to MongoDB for storing Whatsapp Data
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+# Connect to MongoDB for storing general WhatsApp messages a catch all
+db = client["messaging_data"]
+whatsapp_collection = db["whatsapp_messages"]
+# Connect to MongoDB for storing offer WhatsApp messages
+offer_db = client["offer_db"]
+offer_collection = offer_db["offer_messages"]
+today_offer_collection = offer_db['today_offer_collection']
+selected_offer_collection = offer_db["selected_offer_messages"]
+
+# Connect to MongoDB for storing inquire WhatsApp messages
+inquire_db = client["inquire_db"]
+inquire_collection = inquire_db["inquire_messages"]
+# Connect to MongoDB for storing user data
+user_db = client["user_data"]
+user_collection = user_db["users"]
+
+#Whatsapp Webhook
+# Combined WhatsApp Webhook and Verification Endpoint
+@whatsapp_blueprint.route("/whatsapp_webhook", methods=["POST", "GET"])
+def whatsapp_webhook():
+    if request.method == "POST":
+        # Handle incoming WhatsApp messages
+        data = request.json
+        handle_incoming_messages(data)
+        return "", 200
+    elif request.method == "GET":
+        # Handle webhook verification
+        # Define your verification token
+        VERIFY_TOKEN = "aniruddha"
+
+        # Parse the query parameters from the request
+        mode = request.args.get("hub.mode")
+        token = request.args.get("hub.verify_token")
+        challenge = request.args.get("hub.challenge")
+
+        # Check if a mode and token were sent
+        if mode and token:
+            # Check if the mode is 'subscribe' and the token matches your verification token
+            if mode == "subscribe" and token == VERIFY_TOKEN:
+                # Respond with the challenge token to complete the verification
+                return challenge, 200
+            else:
+                # Respond with '403 Forbidden' if the token doesn't match
+                return "Invalid verification token", 403
+        else:
+            # Respond with '400 Bad Request' if mode or token is missing
+            return "Missing mode or token", 400
+
+# Function to handle incoming messages
+def handle_incoming_messages(data):
+    for entry in data.get('entry', []):
+        for change in entry.get('changes', []):
+            if 'messages' in change.get('field', ''):
+                message_data = change.get('value', {})
+                for message in message_data.get('messages', []):
+                    if message.get('type') == 'text':
+                        text = message.get('text', {}).get('body', '')
+                        sender = message.get('from')
+                        print(f"Received message '{text}' from number '{sender}'")
+                        timestamp_og = message.get('timestamp')
+                        # Convert string timestamp to integer
+                        timestamp_og_int = int(timestamp_og)
+                        timestamp = convert_timestamp(timestamp_og_int)
+                        user = find_or_create_user(sender, text)
+                        handle_message(text, sender, timestamp, user)
+
+
+# Function to handle different types of messages
+def handle_message(text, sender, timestamp, user):
+    if is_offer_selection(text):
+        offer_selection_message(text, sender, timestamp)
+    elif is_offer_message(text):
+        store_offer_message(text, sender, timestamp, user)
+    elif is_inquire_message(text):
+        store_inquire_message(text, sender, timestamp, user)
+    else:
+        store_general_message(text, sender, timestamp, user)
+
+# Function to handle offer selection message
+def offer_selection_message(text, sender, timestamp):
+    try:
+        # Extract order number from the text
+        match = is_offer_selection(text)
+        if match:
+            order_number = int(match.group(1))
+            # Find the offer with the matching order number in today's offers
+            selected_offer = today_offer_collection.find_one({"order": int(order_number)})
+            if selected_offer:
+                # Extract offer_id from the selected offer
+                offer_id = selected_offer.get('offer_id')
+                # Check if the offer already exists for the same sender and offer ID
+                existing_offer = selected_offer_collection.find_one({
+                    'sender': sender,
+                    'offer_id': offer_id
+                })
+                if not existing_offer:
+                    # Store the selected offer in the offer_collection
+                    selected_offer_collection.insert_one({
+                        'order': order_number,
+                        'sender': sender,
+                        'timestamp': timestamp,
+                        'offer_id': offer_id
+                    })
+                    send_whatsapp_message(sender, f"Offer {order_number} selected successfully for user {sender}.")
+                else:
+                    send_whatsapp_message(sender, f"Offer {order_number} is already selected for user {sender}.")
+            else:
+                send_whatsapp_message(sender, "Selected offer not found. Please select a valid offer.")
+        else:
+            send_whatsapp_message(sender, "Invalid offer selection format. Please use 'select: <order_number>'.")
+    except Exception as e:
+        send_whatsapp_message(sender, "An error occurred while processing your offer selection. Please try again later.")
+
+
+#Find or create user------Also add a line userid and match it to wa_id---------
+def find_or_create_user(wa_id, text):
+    # Check if the user exists in the database
+    user = user_collection.find_one({'wa_id': wa_id})
+    if user:
+        return user
+    else:
+        # Determine the user category (buyer or seller) based on message content
+        category = 'buyer' if 'buyer' in text.lower() else 'seller'
+        # Create a new user document with the category
+        user_collection.insert_one({'wa_id': wa_id, 'category': category})
+        return user_collection.find_one({'wa_id': wa_id})
+
+#Store offer message
+def store_offer_message(text, sender, timestamp, user):
+    # Extract offer details from the text
+    match = is_offer_message(text)
+    if match:
+        min_gar = match.group(1) # Extract min GAR
+        max_gar = match.group(2) # Extract max GAR
+        min_ash = match.group(3) # Extract min Ash
+        max_ash = match.group(4) # Extract max Ash
+        volume = match.group(5) # Extract volume
+        laycan = match.group(6).strip()  # Laycan part
+        port = match.group(7).strip()  # Port part
+        # Store offer message with user information
+        offer_collection.insert_one({
+            'sender': sender,
+            'timestamp': timestamp,
+            'user': user,
+            'min_gar': min_gar,
+            'max_gar': max_gar,
+            'min_ash': min_ash,
+            'max_ash': max_ash,
+            'volume': volume,
+            'laycan': laycan,
+            'port': port
+        })
+
+#Store inquire message
+def store_inquire_message(text, sender, timestamp, user):
+    # Extract inquire details from the text
+    match = is_inquire_message(text)
+    if match:
+        min_gar = match.group(1) # Extract min GAR
+        max_gar = match.group(2) # Extract max GAR
+        min_ash = match.group(3) # Extract min Ash
+        max_ash = match.group(4) # Extract max Ash
+        volume = match.group(5) # Extract volume
+        laycan = match.group(6).strip()  # Laycan part
+        port = match.group(7).strip()  # Port part
+        # Store inquire message with user information
+        inquire_collection.insert_one({
+            'sender': sender,
+            'timestamp': timestamp,
+            'user': user,
+            'min_gar': min_gar,
+            'max_gar': max_gar,
+            'min_ash': min_ash,
+            'max_ash': max_ash,
+            'volume': volume,
+            'laycan': laycan,
+            'port': port
+        })
+
+# Store general message Catch all function
+def store_general_message(text, sender, timestamp, user):
+    # Store general message with user information
+    whatsapp_collection.insert_one({
+        'sender': sender,
+        'timestamp': timestamp,
+        'user': user,
+        'text': text
+    })
+import pandas as pd
+from pymongo import MongoClient
+from datetime import datetime
+import matplotlib.pyplot as plt
+import os
+
+def generate_inquiry_table():
+    # Connect to MongoDB
+    client = MongoClient('mongodb://localhost:27017')
+    inquire_db = client['inquire_db']
+    inquire_collection = inquire_db['inquire_messages']
+    today_inquire_collection = inquire_db['today_inquire_collection']
+
+    directory_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/inquiries/'
+
+    # Retrieve the latest 5 inquiries
+    latest_inquiries = list(inquire_collection.find().sort('_id', -1).limit(5))
+
+    # Extract required fields from inquiries and add order number
+    inquiry_data = []
+    for idx, inquiry in enumerate(latest_inquiries, start=1):
+        inquiry_data.append({
+            'No.': idx,
+            'GAR': f"{inquiry['min_gar']} - {inquiry['max_gar']}",
+            'ash': f"{inquiry['min_ash']} - {inquiry['max_ash']}",
+            'volume': inquiry['volume'],
+            'laycan': inquiry['laycan'],
+            'port': inquiry['port']
+        })
+
+    # Create a DataFrame from the data
+    df = pd.DataFrame(inquiry_data)
+
+    # Create a table
+    plt.figure(figsize=(10, 6))
+    plt.axis('off')
+
+    # Add a heading and subheading
+    plt.text(0.5, 0.95, 'Virtuit Co., Ltd', ha='center', fontsize=14)
+    plt.text(0.5, 0.9, "Today's Coal Inquiries", ha='center', fontsize=12)
+
+    # Add the table
+    plt.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
+
+    # Add table creation date and time
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    plt.text(0.99, 0.01, f"Inquiries generated on: {date_time}", ha='right', fontsize=10)
+
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+
+    file_path = os.path.join(directory_path, 'table.png')
+
+    # Save the table as a PNG file
+    plt.savefig(file_path)
+    plt.close()
+
+    # Clear today's inquiries in the collection
+    today_inquire_collection.delete_many({})
+
+    # Insert today's inquiries into the collection
+    inquire_ids = [inquiry['_id'] for inquiry in latest_inquiries]
+    today_inquires = [{'order': idx, 'inquire_id': inquire_id} for idx, inquire_id in enumerate(inquire_ids, start=1)]
+    today_inquire_collection.insert_many(today_inquires)
+    print("Inquiry table generated successfully")
+    import pandas as pd
+from pymongo import MongoClient
+from datetime import datetime
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+import os
+
+def generate_offer_table():
+    # Connect to MongoDB
+    client = MongoClient('mongodb://localhost:27017')
+    offer_db = client['offer_db']
+    offer_collection = offer_db['offer_messages']
+    today_offer_collection = offer_db['today_offer_collection']
+
+    # Retrieve the latest 5 offers
+    offers = list(offer_collection.find().sort('_id', -1).limit(5))
+
+    # Extract required fields from offers and add order number
+    data = []
+    for idx, offer in enumerate(offers, start=1):
+        data.append({
+            'No.': idx,
+            'GAR': f"{offer['min_gar']} - {offer['max_gar']}",
+            'ash': f"{offer['min_ash']} - {offer['max_ash']}",
+            'volume': offer['volume'],
+            'laycan': offer['laycan'],
+            'port': offer['port']
+        })
+
+    # Create a DataFrame from the data
+    df = pd.DataFrame(data)
+
+    # Create a table
+    plt.figure(figsize=(10, 6))
+    plt.axis('off')
+
+    # Add a heading and subheading
+    plt.text(0.5, 0.95, 'Virtuit Co., Ltd', ha='center', fontsize=14)
+    plt.text(0.5, 0.9, "Today's Coal Offer", ha='center', fontsize=12)
+
+    # Add the table
+    plt.table(cellText=df.values, colLabels=df.columns, cellLoc='center', loc='center')
+
+    # Add table creation date and time
+    now = datetime.now()
+    date_time = now.strftime("%Y-%m-%d %H:%M:%S")
+    plt.text(0.99, 0.01, f"Offer generated on: {date_time}", ha='right', fontsize=10)
+
+    # Define the directory path
+    directory_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offers/'
+
+    # Check if the directory exists, if not, create it
+    if not os.path.exists(directory_path):
+        os.makedirs(directory_path)
+
+    # Save the table as a PNG file
+    file_path = os.path.join(directory_path, 'table.png')
+    plt.savefig(file_path)
+    plt.close()
+
+    # Clear today's offers in the collection
+    today_offer_collection.delete_many({})
+
+    # Insert today's offers into the collection
+    offer_ids = [offer['_id'] for offer in offers]
+    today_offers = [{'order': idx, 'offer_id': offer_id} for idx, offer_id in enumerate(offer_ids, start=1)]
+    today_offer_collection.insert_many(today_offers)
+    print("Offer table generated successfully")
+
+    #includes functions to convert timestamp, check if the message is an offer selection, offer message or inquire message
+
+import datetime
+import re
+
+#Function to convert timestamp
+def convert_timestamp(timestamp_og_int):
+    dt_object = datetime.datetime.fromtimestamp(timestamp_og_int)
+    # Format datetime object as a readable date and time
+    readable_date_time = dt_object.strftime('%Y-%m-%d %H:%M:%S')
+    return readable_date_time
+
+# Function to check if the message is an offer selection
+def is_offer_selection(text):
+    return re.match(r"select: (\d+)", text)
+
+# Function to check if the message is an offer confirmation
+def is_offer_confirmation(text):
+    return re.match(r"confirm: (\d+)", text)
+
+#Check if the message is an offer message
+def is_offer_message(text):
+    # Check if the text matches the offer message pattern
+    pattern = r"offer: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+) Country (\w+) Mine Name (\w+)"
+    return re.match(pattern, text)
+
+'''
+re pattern explanation: offer | inquire both have the same pattern
+1. GAR (\d+)(?:-(\d+))? - matches the GAR number, which is a digit or a range of digits separated by a hyphen
+2. Ash (\d+)(?:-(\d+))? - matches the Ash number, which is a digit or a range of digits separated by a hyphen
+3. Volume (\d+) - matches the Volume number, which is a digit
+4. Laycan \((.*?)\) - matches the Laycan date, which is a string enclosed in parentheses
+5. Port (\w+) - matches the Port name, which is a word character
+6. Country (\w+) - matches the Country name, which is a word character
+7. Mine Name (\w+) - matches the Mine Name, which is a word character
+'''
+
+#Check if the message is an inquire message
+def is_inquire_message(text):
+    # Check if the text matches the inquire message pattern
+    pattern = r"inquire: GAR (\d+)(?:-(\d+))? Ash (\d+)(?:-(\d+))? Volume (\d+) Laycan \((.*?)\) Port (\w+) Country (\w+) Mine Name (\w+)"
+    return re.match(pattern, text)
+import requests
+import json
+import pymongo
+
+#Database
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+user_db = client["user_data"]
+user_collection = user_db["users"]
+
+CHANNEL_ACCESS_TOKEN = 'wQRsF0ucWe3yo8Cme5+Plj6yFIegLEXC9D5DI0COnkRd0bThx+hHYVC+ESkRsj3SDkEEi9j+wL+/iDXc4XWhaJ0t535Jdk3pvKG28B9RdFxHLMUoHUYYFR7EDt3Nr2kj1wp5gfZRiSN+np+EU3VpbgdB04t89/1O/w1cDnyilFU='
+
+def send_line_image(user_id, image_url):
+    url = "https://api.line.me/v2/bot/message/push"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"
     }
-});
 
-// Read
-router.get('/inquires/read', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const inquire_messages = database.collection('inquire_messages');
-        const allInquires = await inquire_messages.find().toArray();
-        res.json(allInquires);
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Update
-router.put('/inquires/update/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const inquire_messages = database.collection('inquire_messages');
-        const query = {
-            _id: req.params.id
-        };
-        const update = {
-            $set: req.body
-        };
-        const updateResult = await inquire_messages.updateOne(query, update);
-        res.json({
-            matchedCount: updateResult.matchedCount
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Delete
-router.delete('/inquires/delete/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const inquire_messages = database.collection('inquire_messages');
-        const deleteResult = await inquire_messages.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-        res.json({
-            deletedCount: deleteResult.deletedCount
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-/* This code block defines CRUD (Create, Read, Update, Delete) operations for a collection named
-`today_inquires_collection` in a MongoDB database named `inquire_db`. Here's a breakdown of what
-each part of the code does: */
-// CRUD for inquire_db/today_inquires_collection
-// Create
-router.post('/today_inquires/create', async (req, res, next) => {
-    try {
-        await client.connect();
-        const {
-            order,
-            inquire_id
-        } = req.body;
-        const requiredFields = {
-            order,
-            inquire_id
-        };
-        const missingFields = Object.entries(requiredFields).filter(([key, value]) => !value).map(([key]) => key);
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
-        }
-        const database = client.db('inquire_db');
-        const today_inquire_collection = database.collection('today_inquire_collection');
-        const existingInquire = await today_inquire_collection.findOne({
-            order,
-            'inquire_id.$oid': inquire_id.$oid
-        });
-        if (existingInquire) return res.status(200).json({
-            message: 'Entry already exists'
-        });
-        const result = await today_inquire_collection.insertOne(req.body);
-        res.json({
-            id: result.insertedId
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Read
-router.get('/today_inquires/read', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const today_inquire_collection = database.collection('today_inquire_collection');
-        const allInquires = await today_inquire_collection.find().toArray();
-        res.json(allInquires);
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Update
-router.put('/today_inquires/update/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const today_inquire_collection = database.collection('today_inquire_collection');
-        const query = {
-            _id: req.params.id
-        };
-        const update = {
-            $set: req.body
-        };
-        const updateResult = await today_inquire_collection.updateOne(query, update);
-        res.json({
-            matchedCount: updateResult.matchedCount
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-// Delete
-router.delete('/today_inquires/delete/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('inquire_db');
-        const today_inquire_collection = database.collection('today_inquire_collection');
-        const deleteResult = await today_inquire_collection.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-        res.json({
-            deletedCount: deleteResult.deletedCount
-        });
-    } catch (error) {
-        next(error);
-    }
-});
-
-module.exports = router;
-//offer_coa_upload_restful_api.js
-const express = require("express");
-const router = express.Router();
-const mongoose = require("mongoose");
-const multer = require("multer");
-
-// MongoDB connection
-const mongoUrl = "mongodb://localhost:27017/offer_db"; // Your MongoDB connection URL
-mongoose.connect(mongoUrl, { useNewUrlParser: true });
-
-// Define schema for PDF details
-const PdfDetailsSchema = new mongoose.Schema(
-  {
-    pdf: Buffer,
-
-  },
-  { collection: "offer_messages" }
-);
-
-const PdfDetails = mongoose.model("PdfDetails", PdfDetailsSchema);
-
-router.get("/get-offers-with-coa", async (req, res) => {
-  try {
-    const data = await PdfDetails.find({ pdf: { $exists: true } }, { _id: 1 }); // Filter by the existence of the pdf field
-    res.send({ status: "ok", data: data.map(doc => doc._id) }); // Return only the ObjectIDs
-  } catch (error) {
-    res.json({ status: error });
-  }
-});
-
-router.get("/get-offers-without-coa", async (req, res) => {
-  try {
-    const data = await PdfDetails.find({ pdf: { $exists: false } }, { _id: 1 }); // Filter by the existence of the pdf field
-    res.send({ status: "ok", data: data.map(doc => doc._id) }); // Return only the ObjectIDs
-  } catch (error) {
-    res.json({ status: error });
-  }
-});
-
-
-// Route for getting a specific PDF file
-router.get("/pdf/:id", async (req, res) => {
-  try {
-    const id = req.params.id;
-    const pdf = await PdfDetails.findById(id);
-
-    if (!pdf) {
-      return res.status(404).json({ error: 'PDF not found' });
-    }
-
-    // Set response header to indicate the content type
-    res.setHeader('Content-Type', 'application/pdf');
-
-    // Send the PDF content as the response
-    res.send(pdf.pdf);
-  } catch (error) {
-    console.error('Error fetching PDF:', error);
-    res.status(500).json({ error: 'Error fetching PDF' });
-  }
-});
-
-module.exports = router;
-//offer_model.js
-//Offer Schema is defined here
-const mongoose = require('mongoose');
-
-const offerSchema = new mongoose.Schema({
-    sender: String,
-    timestamp: String,
-    user: {
-        userId: String,
-        category: String
-    },
-    country: String,
-    mine_name: String,
-    typical_gar: String,
-    typical_ash: String,
-    typical_sulphur: String,
-    volume: String,
-    laycan: String,
-    port: String,
-    status: String,
-    pdf: Buffer // Store PDF data as Buffer
-});
-
-// Create model from schema
-const Offer = mongoose.model('Offer', offerSchema);
-
-module.exports = Offer;
-//offer_restful_api.js
-// Purpose: Create a RESTful API for Offer's Database CRUD operations on a MongoDB database
-const express = require('express');
-const router = express.Router();
-const {
-    MongoClient,
-    ObjectId
-} = require("mongodb");
-const multer = require("multer");
-const Offer = require('./offer_model');
-
-const upload = multer({ storage: multer.memoryStorage() }); // Store files in memory
-
-// Replace the uri string with your connection string.
-const uri = "mongodb://localhost:27017";
-const client = new MongoClient(uri);
-
-/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
-collection named 'offer_messages' in the 'offer_db' database. Here is a summary of each operation: */
-//CRUD operations for offer_db/offers
-//Create
-/*
-// Sample request body for creating a new offer message
-{
-    "sender": "admin",
-    "timestamp": "2024-03-25 10:31:35",
-    "user": {
-        "userId": "ADMIN",
-        "category": "admin"
-    },
-    "country": "Russia",
-    "mine_name": "Elga HCC Select",
-    "typical_gar": "6200",
-    "typical_ash": "16",
-    "typical_sulphur": "NaN",
-    "volume": "NaN",
-    "laycan": "NaN",
-    "port": "Vanino/ Vostochny",
-    "status": "NaN",
-    "pdf": "PDF data in base64 format"
-}
-*/
-router.post('/offers/create', upload.single('pdf'), async (req, res, next) => {
-    try {
-        const {
-            sender,
-            timestamp,
-            user,
-            country,
-            mine_name,
-            typical_gar,
-            typical_ash,
-            typical_sulphur,
-            volume,
-            laycan,
-            port,
-            status,
-            //esline-disable-next-line no-unused-vars
-            pdf
-        } = req.body;
-
-        // Check if data is complete
-        let missingFields = [];
-        if (!sender) missingFields.push('sender');
-        if (!timestamp) missingFields.push('timestamp');
-        if (!user) missingFields.push('user');
-        if (!country) missingFields.push('country');
-        if (!mine_name) missingFields.push('mine_name');
-        if (!typical_gar) missingFields.push('typical_gar');
-        if (!typical_ash) missingFields.push('typical_ash');
-        if (!typical_sulphur) missingFields.push('typical_sulphur');
-        if (!volume) missingFields.push('volume');
-        if (!laycan) missingFields.push('laycan');
-        if (!port) missingFields.push('port');
-        if (!status) missingFields.push('status');
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
-        }
-
-        //check if pdf is present and valid
-        if (!req.file) {
-            return res.status(400).json({
-                error: 'No PDF provided'
-            });
-        }
-        const pdfData = req.file.buffer; // Retrieve PDF data from request buffer
-
-        //Create a new offer with pdf
-        const newOffer = new Offer({
-            sender,
-            timestamp,
-            user,
-            country,
-            mine_name,
-            typical_gar,
-            typical_ash,
-            typical_sulphur,
-            volume,
-            laycan,
-            port,
-            status,
-            pdf: pdfData
-        });
-
-        // Save the new offer to the database
-        await client.connect();
-        const database = client.db('offer_db');
-        const offer_messages = database.collection('offer_messages');
-
-        // Check if the entry already exists
-        const existingOffer = await offer_messages.findOne({
-            sender,
-            timestamp,
-            'user._id': user._id // For backward compatibility
-        });
-
-        // If user._id is not present, check for user.wa_id
-        if (!existingOffer && user.wa_id) {
-            const existingOfferByWaId = await offer_messages.findOne({
-                sender,
-                timestamp,
-                'user.wa_id': user.wa_id
-            });
-
-            if (existingOfferByWaId) {
-                return res.status(200).json({
-                    message: 'Entry already exists'
-                });
+    payload = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "image",
+                "originalContentUrl": image_url,
+                "previewImageUrl": image_url
             }
+        ]
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response_data = response.json()
+        if response.status_code == 200:
+            print("Line message sent successfully to user:", user_id)
+        else:
+            print("Failed to send Line message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending Line message:", str(e))
+        return None
+
+def send_line_message(user_id, message):
+    url = "https://api.line.me/v2/bot/message/push"
+
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": f"Bearer {CHANNEL_ACCESS_TOKEN}"
+    }
+
+    payload = {
+        "to": user_id,
+        "messages": [
+            {
+                "type": "text",
+                "text": message
+            }
+        ]
+    }
+
+    try:
+        response = requests.post(url, headers=headers, json=payload)
+        response_data = response.json()
+        if response.status_code == 200:
+            print("Line message sent successfully to user:", user_id)
+        else:
+            print("Failed to send Line message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending Line message:", str(e))
+        return None
+
+def get_buyer_user_ids():
+    try:
+        # Query the database
+        buyers = user_collection.find({"category": "buyer"}, {"userId": 1})
+        buyer_user_ids = [buyer["userId"] for buyer in buyers if "userId" in buyer]
+        print("Buyer user IDs:", buyer_user_ids)
+        
+        # Print all the data found
+        for buyer in buyers:
+            print("Buyer data:", buyer)
+        
+        return buyer_user_ids
+    except KeyError:
+        print("Error: 'userId' field not found in some documents.")
+        return []
+
+
+def get_seller_user_ids():
+    try:
+        # Query the database
+        sellers = user_collection.find({"category": "seller"}, {"userId": 1})
+        seller_user_ids = [seller["userId"] for seller in sellers if "userId" in seller]
+        print("Seller user IDs:", seller_user_ids)
+        
+        # Print all the data found
+        for seller in sellers:
+            print("Seller data:", seller)
+        
+        return seller_user_ids
+    except KeyError:
+        print("Error: 'userId' field not found in some documents.")
+        return []
+
+
+#Function to send a WhatsApp image message
+import requests
+import json
+import pymongo
+
+#Database
+client = pymongo.MongoClient("mongodb://localhost:27017/")
+user_db = client["user_data"]
+user_collection = user_db["users"]
+
+#send whatsapp image
+def send_whatsapp_image(phone_number, image_url):
+    from_phone_number_id = "264895430037819"
+    url = f"https://graph.facebook.com/v19.0/{from_phone_number_id}/messages"
+    access_token = "EAAFiaqaNBdcBO5fw75rvTe9RNfcoSxAeBr8CbU9v63IawIBOr6XPW6YSXcx75as2zNzH563OGahoikF0JKQ0yY84BrlC8XJoZAVps10CnXZC7iCaKrkpU9D3W6QpNZCUh2OLrbCVPDqt2TELxKLZAz2UaZCr6jNzGNB61hZAQNvU10xarasZAVA2A3y6Vc9G0EMAcvj5QJM1ZAm3UTBcX24QYvqMZBMsZD"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone_number,
+        "type": "image",
+        "image": {
+            "link": image_url
         }
+    }
 
-        // If neither user._id nor user.wa_id is present, proceed with insertion
-        if (!existingOffer) {
-            const result = await offer_messages.insertOne(newOffer);
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response_data = response.json()
+        if response.status_code == 200:
+            print("WhatsApp image message sent successfully to:", phone_number)
+        else:
+            print("Failed to send WhatsApp image message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending WhatsApp image message:", str(e))
+        return None
 
-            return res.status(201).json({
-                id: result.insertedId
-            });
+#send whatsapp message
+def send_whatsapp_message(phone_number, message):
+    from_phone_number_id = "264895430037819"
+    url = f"https://graph.facebook.com/v19.0/{from_phone_number_id}/messages"
+    access_token = "EAAFiaqaNBdcBO5fw75rvTe9RNfcoSxAeBr8CbU9v63IawIBOr6XPW6YSXcx75as2zNzH563OGahoikF0JKQ0yY84BrlC8XJoZAVps10CnXZC7iCaKrkpU9D3W6QpNZCUh2OLrbCVPDqt2TELxKLZAz2UaZCr6jNzGNB61hZAQNvU10xarasZAVA2A3y6Vc9G0EMAcvj5QJM1ZAm3UTBcX24QYvqMZBMsZD"
+
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
+    }
+
+    payload = {
+        "messaging_product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone_number,
+        "type": "text",
+        "text": {
+            "body": message
         }
-
-        return res.status(200).json({
-            message: 'Entry already exists'
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
     }
-});
 
-//Read
-router.get('/offers/read', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const offer_messages = database.collection('offer_messages');
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response_data = response.json()
+        if response.status_code == 200:
+            print("WhatsApp message sent successfully to:", phone_number)
+        else:
+            print("Failed to send WhatsApp message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending WhatsApp message:", str(e))
+        return None
 
-        const allOffers = await offer_messages.find().toArray();
+#Send Document message
+def send_whatsapp_document(phone_number, document_url):
+    from_phone_number_id = "264895430037819"
+    url = f"https://graph.facebook.com/v19.0/{from_phone_number_id}/messages"
+    access_token = "EAAFiaqaNBdcBO5fw75rvTe9RNfcoSxAeBr8CbU9v63IawIBOr6XPW6YSXcx75as2zNzH563OGahoikF0JKQ0yY84BrlC8XJoZAVps10CnXZC7iCaKrkpU9D3W6QpNZCUh2OLrbCVPDqt2TELxKLZAz2UaZCr6jNzGNB61hZAQNvU10xarasZAVA2A3y6Vc9G0EMAcvj5QJM1ZAm3UTBcX24QYvqMZBMsZD"
 
-        res.json(allOffers);
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
+    headers = {
+        "Authorization": f"Bearer {access_token}",
+        "Content-Type": "application/json"
     }
-});
-
-//Update
-router.put('/offers/update/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const offer_messages = database.collection('offer_messages');
-
-        const query = {
-            _id: req.params.id
-        };
-        const update = {
-            $set: req.body
-        };
-
-        const updateResult = await offer_messages.updateOne(query, update);
-
-        res.json({
-            matchedCount: updateResult.matchedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Delete
-router.delete('/offers/delete/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const offer_messages = database.collection('offer_messages');
-
-        const deleteResult = await offer_messages.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-
-        res.json({
-            deletedCount: deleteResult.deletedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
-collection named `today_offer_collection` in the `offer_db` database. Here is a breakdown of each
-operation: */
-//CRUD for offer_db/today_offer_collection
-//CRUD operations
-//Create
-router.post('/today_offer/create', async (req, res, next) => {
-    try {
-        const {
-            order,
-            offer_id
-        } = req.body;
-
-        // Check if data is complete
-        let missingFields = [];
-        if (!order) missingFields.push('order');
-        if (!offer_id) missingFields.push('offer_id');
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
+    payload = {
+        "messaging-product": "whatsapp",
+        "recipient_type": "individual",
+        "to": phone_number,
+        "type": "document",
+        "document": {
+            "link": document_url
         }
-
-        await client.connect();
-        const database = client.db('offer_db');
-        const today_offer_collection = database.collection('today_offer_collection');
-
-        // Check if the entry already exists
-        const existingOffer = await today_offer_collection.findOne({
-            order,
-            'offer_id.$oid': offer_id.$oid
-        });
-        if (existingOffer) {
-            return res.status(200).json({
-                message: 'Entry already exists'
-            });
-        }
-
-        const new_offer = req.body;
-        const result = await today_offer_collection.insertOne(new_offer);
-
-        res.json({
-            id: result.insertedId
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
     }
-});
 
-//Read
-router.get('/today_offer/read', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const today_offer_collection = database.collection('today_offer_collection');
-
-        const allOffers = await today_offer_collection.find().toArray();
-
-        res.json(allOffers);
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Update
-router.put('/today_offer/update/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const today_offer_collection = database.collection('today_offer_collection');
-
-        const query = {
-            _id: req.params.id
-        };
-        const update = {
-            $set: req.body
-        };
-
-        const updateResult = await today_offer_collection.updateOne(query, update);
-
-        res.json({
-            matchedCount: updateResult.matchedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Delete
-router.delete('/today_offer/delete/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const today_offer_collection = database.collection('today_offer_collection');
-
-        const deleteResult = await today_offer_collection.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-
-        res.json({
-            deletedCount: deleteResult.deletedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-/* The above code is implementing CRUD (Create, Read, Update, Delete) operations for a MongoDB
-collection named 'selected_offer_messages' in the 'offer_db' database. Here is a summary of each
-operation: */
-//CRUD for offer_db/selected_offers
-//CRUD operations
-//Create
-router.post('/selected_offers/create', async (req, res, next) => {
-    try {
-        const {
-            order,
-            sender,
-            timestamp,
-            offer_id
-        } = req.body;
-
-        // Check if data is complete
-        let missingFields = [];
-        if (!order) missingFields.push('order');
-        if (!offer_id) missingFields.push('offer_id');
-        if (!sender) missingFields.push('sender');
-        if (!timestamp) missingFields.push('timestamp');
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
-        }
-
-        await client.connect();
-        const database = client.db('offer_db');
-        const selected_offers = database.collection('selected_offer_messages');
-
-        // Check if the entry already exists
-        const existingOffer = await selected_offers.findOne({
-            order,
-            'offer_id.$oid': offer_id.$oid,
-            sender,
-        });
-        if (existingOffer) {
-            return res.status(200).json({
-                message: 'Entry already exists'
-            });
-        }
-
-        const new_offer = req.body;
-        const result = await selected_offers.insertOne(new_offer);
-
-        res.json({
-            id: result.insertedId
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Read
-router.get('/selected_offers/read', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const selected_offers = database.collection('selected_offer_messages');
-
-        const allOffers = await selected_offers.find().toArray();
-
-        res.json(allOffers);
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Update
-router.put('/selected_offers/update/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const selected_offers = database.collection('selected_offer_messages');
-
-        const query = {
-            _id: req.params.id
-        };
-        const update = {
-            $set: req.body
-        };
-
-        const updateResult = await selected_offers.updateOne(query, update);
-
-        res.json({
-            matchedCount: updateResult.matchedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-//Delete
-router.delete('/selected_offers/delete/:id', async (req, res, next) => {
-    try {
-        await client.connect();
-        const database = client.db('offer_db');
-        const selected_offers = database.collection('selected_offer_messages');
-
-        const deleteResult = await selected_offers.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-
-        res.json({
-            deletedCount: deleteResult.deletedCount
-        });
-    } catch (error) {
-        next(error);
-    } finally {
-        await client.close();
-    }
-});
-
-module.exports = router;
-//restful_api_main.js
-const express = require("express");
-const bodyParser = require("body-parser");
-const offer_api = require("./offer_restful_api");
-const user_api = require("./user_restful_api");
-const inquire_api = require("./inquire_restful_api");
-const offer_coa_upload_api = require("./offer_coa_upload_restful_api");
-const cors = require("cors");
-const axios = require("axios");
-const mongoose = require("mongoose");
-
-/* The code snippet you provided is connecting the Express application to a MongoDB database. Here's a
-breakdown of what it does: */
-// Connect to MongoDB
-mongoose
-  .connect("mongodb://localhost:27017/offer_db", {
-    useNewUrlParser: true,
-    useUnifiedTopology: true,
-  })
-  .then(() => console.log("MongoDB connected"))
-  .catch((err) => console.error("MongoDB connection error:", err));
-
-// Create a new express application
-const app = express();
-app.use(bodyParser.json());
-app.use(cors());
-
-/**
- * The function `authenticateApiKey` is a middleware used for API key authentication in a Node.js
- * application.
- * @param req - The `req` parameter in the `authenticateApiKey` function stands for the request object.
- * It contains information about the HTTP request made to the server, including headers, parameters,
- * body, and more. In this case, the function is extracting the value of the `x-api-key` header from
- * the
- * @param res - The `res` parameter in the `authenticateApiKey` function stands for the response object
- * in Node.js. It is used to send a response back to the client making the request. In this case, the
- * function is checking for the presence and validity of an API key in the request headers, and if
- * @param next - The `next` parameter in the `authenticateApiKey` function is a callback function that
- * is used to pass control to the next middleware function in the request-response cycle. When called,
- * it tells Express to move on to the next middleware function in the chain. This allows you to chain
- * multiple middleware functions together
- * @returns In the provided code snippet, if the API key is not provided or is invalid, a response with
- * an error message and a status code of 401 (Unauthorized) is being returned. If the API key is valid,
- * the `next()` function is called to proceed to the next middleware or route handler in the
- * application.
- */
-// Middleware for API key authentication
-function authenticateApiKey(req, res, next) {
-  const apiKey = req.headers["x-api-key"];
-
-  // Check if API key is provided
-  if (!apiKey) {
-    return res.status(401).json({
-      error: "No API key provided",
-    });
-  }
-
-  // Check if API key is valid
-  // Replace 'your_api_key' with your actual API key
-  if (apiKey !== "aniruddhaqwerty1234") {
-    return res.status(401).json({
-      error: "Invalid API key",
-    });
-  }
-
-  next();
-}
-
-/* The code snippet you provided is setting up health check endpoints for different components of your
-application, namely Flask, Express, and MongoDB. These endpoints are used to verify the health
-status of each component. */
-// Health check endpoint for Flask
-app.get("/api/v1/health/flask", async (req, res) => {
-  try {
-    // Make a request to the Flask health check endpoint
-    const response = await axios.get("http://localhost:5000/api/v1/health");
-
-    // Check if the Flask server is healthy
-    if (response.data.message === "Flask server is running!") {
-      res.status(200).json({
-        message: "Flask server is healthy",
-      });
-    } else {
-      res.status(500).json({
-        error: "Flask server is not healthy",
-      });
-    }
-  } catch (error) {
-    console.error("Error while checking Flask server health:", error);
-    res.status(500).json({
-      error: "Error while checking Flask server health",
-    });
-  }
-});
-
-// Health check endpoint for Express
-app.get("/api/v1/health/express", (req, res) => {
-  // Check if the Express server is healthy
-  res.status(200).json({
-    message: "Express server is healthy",
-  });
-});
-
-// Health check endpoint for MongoDB
-app.get("/api/v1/health/mongodb", (req, res) => {
-  // Check if the MongoDB connection is open
-  if (mongoose.connection.readyState === 1) {
-    res.status(200).json({
-      message: "MongoDB connection is open",
-    });
-  } else {
-    res.status(500).json({
-      error: "MongoDB connection is closed",
-    });
-  }
-});
-// Use the API key authentication middleware
-app.use(authenticateApiKey);
-
-app.use("/offer_db", offer_api);
-app.use("/user_data", user_api);
-app.use("/inquire_db", inquire_api);
-app.use("/offer_coa_upload", offer_coa_upload_api);
-
-// Error handling middleware
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: "Internal server error",
-  });
-});
-
-// Start the Express server
-app.listen(3000, () => console.log("Server is running on port 3000"));
-//user_restful_api.js
-const express = require('express');
-const router = express.Router();
-const {
-    MongoClient,
-    ObjectId
-} = require("mongodb");
-
-// Replace the uri string with your connection string.
-const uri = "mongodb://localhost:27017";
-const client = new MongoClient(uri);
-
-/* This code snippet is defining CRUD (Create, Read, Update, Delete) operations for a user database
-using Express.js and MongoDB. Here's a breakdown of each operation: */
-//CRUD operations for User's Database
-//Create
-router.post('/users/create', async (req, res, next) => {
-    try {
-        console.log("Creating a new user...");
-        const {
-            wa_id,
-            category,
-            userId
-        } = req.body;
-
-        // Check if data is complete
-        let missingFields = [];
-        if (!wa_id && !userId) {
-            missingFields.push('wa_id or userId');
-        }
-        if (!category) {
-            missingFields.push('category');
-        }
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
-        }
-
-        await client.connect();
-        console.log("Connected to the database");
-
-        const database = client.db('user_data');
-        const user = database.collection('users');
-
-        // Check if the entry already exists
-        const existing_user = await user.findOne({
-            wa_id,
-            category,
-            userId
-        });
-        if (existing_user) {
-            console.log("Entry already exists");
-            return res.status(200).json({
-                message: 'Entry already exists'
-            });
-        }
-
-        const new_user = req.body;
-        const result = await user.insertOne(new_user);
-        console.log("New user created:", result.insertedId);
-
-        res.json({
-            id: result.insertedId
-        });
-    } catch (error) {
-        console.error("Error creating user:", error);
-        next(error);
-    } finally {
-        await client.close();
-        console.log("Database connection closed");
-    }
-});
-
-//Read
-router.get('/users/read', async (req, res, next) => {
-    try {
-        console.log("Reading users from the database...");
-        await client.connect();
-        console.log("Connected to the database");
-
-        const database = client.db('user_data');
-        const user = database.collection('users');
-        const result = await user.find({}).toArray();
-
-        console.log("Users retrieved:", result.length);
-        res.json(result);
-    } catch (error) {
-        console.error("Error reading users:", error);
-        next(error);
-    } finally {
-        await client.close();
-        console.log("Database connection closed");
-    }
-});
-
-//Update
-router.put('/users/update/:id', async (req, res, next) => {
-    try {
-        console.log("Updating user...");
-        const id = req.params.id;
-        const {
-            wa_id,
-            category,
-            userId
-        } = req.body;
-
-        // Check if data is complete
-        let missingFields = [];
-        if (!wa_id && !userId) {
-            missingFields.push('wa_id or userId');
-        }
-        if (!category) {
-            missingFields.push('category');
-        }
-
-        if (missingFields.length > 0) {
-            return res.status(400).json({
-                error: 'Incomplete data',
-                missing: missingFields
-            });
-        }
-
-        await client.connect();
-        console.log("Connected to the database");
-
-        const database = client.db('user_data');
-        const user = database.collection('users');
-
-        const result = await user.updateOne({
-            _id: new ObjectId(id)
-        }, {
-            $set: req.body
-        });
-
-        if (result.matchedCount === 0) {
-            console.log("User not found");
-            throw new NotFoundError('Entry not found');
-        }
-
-        console.log("User updated:", id);
-        res.json({
-            message: 'Entry updated'
-        });
-    } catch (error) {
-        console.error("Error updating user:", error);
-        next(error);
-    } finally {
-        await client.close();
-        console.log("Database connection closed");
-    }
-});
-
-//Delete
-router.delete('/users/delete/:id', async (req, res, next) => {
-    try {
-        console.log("Deleting user...");
-        await client.connect();
-        console.log("Connected to the database");
-
-        const database = client.db('user_data');
-        const user = database.collection('users');
-
-        const result = await user.deleteOne({
-            _id: new ObjectId(req.params.id)
-        });
-
-        if (result.deletedCount === 0) {
-            console.log("User not found");
-            throw new NotFoundError('Entry not found');
-        }
-
-        console.log("User deleted:", req.params.id);
-        res.json({
-            message: 'Entry deleted'
-        });
-    } catch (error) {
-        console.error("Error deleting user:", error);
-        next(error);
-    } finally {
-        await client.close();
-        console.log("Database connection closed");
-    }
-});
-
-module.exports = router;
+    try:
+        response = requests.post(url, headers=headers, data=json.dumps(payload))
+        response_data = response.json()
+        if response.status_code == 200:
+            print("WhatsApp document message sent successfully to:", phone_number)
+        else:
+            print("Failed to send WhatsApp Document message. Response:", response_data)
+    except Exception as e:
+        print("An error occurred while sending WhatsApp Document message:", str(e))
+        return None
+
+#Get buyer phone number
+def get_buyer_phone_number():
+    try:
+        # Query database
+        buyers = user_collection.find({"category": "buyer"}, {"wa_id": 1})
+        buyer_phone_numbers = [buyer.get("wa_id") for buyer in buyers if buyer.get("wa_id") is not None]
+        print("Buyer phone numbers:", buyer_phone_numbers)
+        return buyer_phone_numbers
+    except Exception as e:
+        print("An error occurred while fetching buyer phone numbers:", str(e))
+        return []
+
+#Get seller phone number
+def get_seller_phone_number():
+    try:
+        # Query database
+        sellers = user_collection.find({"category": "seller"}, {"wa_id": 1})
+        seller_phone_numbers = [seller.get("wa_id") for seller in sellers if seller.get("wa_id") is not None]
+        print("Seller phone numbers:", seller_phone_numbers)
+        return seller_phone_numbers
+    except Exception as e:
+        print("An error occurred while fetching seller phone numbers:", str(e))
+        return []
