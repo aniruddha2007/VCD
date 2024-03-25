@@ -1,45 +1,57 @@
-```markdown
-# Node.js Backend Server
+## README.md
 
-This Node.js application serves as a backend server for managing various functionalities through RESTful APIs. It includes endpoints for offers, user data, inquiries, and offer COA uploads. The application is connected to a MongoDB database for data storage and utilizes Axios for making HTTP requests, Mongoose for MongoDB interaction, and CORS for enabling cross-origin resource sharing.
+### Introduction
 
-## Installation
+This project comprises several key functionalities, including a RESTful API for managing PDFs and users, along with an Offer model for database operations. Built with Express.js and MongoDB, it's designed for easy management and retrieval of data.
 
-1. Clone the repository:
+### Installation
 
-   ```
-   git clone <repository-url>
-   ```
+1. Ensure you have [Node.js](https://nodejs.org) and [MongoDB](https://www.mongodb.com) installed.
+2. Clone the repository to your local machine.
+3. Run `npm install` to install the dependencies.
 
-2. Install dependencies:
+### Usage
 
-   ```
-   npm install
-   ```
+#### Starting the Server
 
-3. Start the server:
-
-   ```
-   npm start
-   ```
-
-4. Ensure MongoDB is running locally on port `27017`.
-
-## Usage
-
-- The server runs on port `3000` by default.
-- Use API endpoints to perform CRUD operations for offers, user data, inquiries, and offer COA uploads.
-- Ensure to provide the correct API key in the `x-api-key` header for authentication.
-
-## API Key Authentication
-
-- API key authentication middleware (`authenticateApiKey`) ensures that requests are authenticated before proceeding to the respective endpoints. Unauthorized requests receive a 401 status response.
-
-## Health Check Endpoints
-
-- Health check endpoints are available to verify the status of the Flask server, Express server, and MongoDB connection.
-
-## Error Handling
-
-- The application includes an error handling middleware that catches and logs errors, responding with a 500 status for internal server errors.
+```bash
+node app.js
 ```
+
+Replace `app.js` with the entry file of the project.
+
+#### Fetching PDFs
+
+```bash
+GET /pdf/:id
+```
+
+Replace `:id` with the actual PDF file ID to get its content.
+
+#### Creating Users
+
+```bash
+POST /users/create
+```
+
+Body:
+
+```json
+{
+  "new_user": {
+   // user data here
+  }
+}
+```
+
+### Additional Information
+
+For detailed API usage, refer to the provided documentation. Ensure MongoDB is running on your system to store and retrieve data effectively.
+
+### Contributing
+
+Contributions are welcome. Please fork the repository and submit pull requests for any enhancements.
+
+---
+
+This README and the accompanying documentation provide a general guide to understanding and using the provided code effectively. Adjustments may be necessary based on further code details not covered in the provided excerpts.  
