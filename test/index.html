@@ -1,19 +1,116 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PDF Viewer</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test API</title>
 </head>
 <body>
-  <h1>PDF Viewer</h1>
-  <div>
-    <button onclick="fetchPdf('660066cbb1635c48b0832a8f')">Fetch PDF</button>
-  </div>
-  <div>
-    <embed id="pdfViewer" type="application/pdf" width="100%" height="600px">
-  </div>
+    <h1>Test API</h1>
+    <div>
+        <label for="sender">Sender:</label>
+        <input type="text" id="sender" value="admin">
+    </div>
+    <div>
+        <label for="timestamp">Timestamp:</label>
+        <input type="text" id="timestamp" value="2024-03-25 10:31:35">
+    </div>
+    <div>
+        <label for="userId">User ID:</label>
+        <input type="text" id="userId" value="ADMIN">
+    </div>
+    <div>
+        <label for="category">Category:</label>
+        <input type="text" id="category" value="admin">
+    </div>
+    <div>
+        <label for="country">Country:</label>
+        <input type="text" id="country" value="Russia">
+    </div>
+    <div>
+        <label for="mine_name">Mine Name:</label>
+        <input type="text" id="mine_name" value="Elga HCC Select">
+    </div>
+    <div>
+        <label for="typical_gar">Typical GAR/GCV:</label>
+        <input type="text" id="typical_gar" value="6200">
+    </div>
+    <div>
+        <label for="typical_ash">Typical Ash:</label>
+        <input type="text" id="typical_ash" value="16">
+    </div>
+    <div>
+        <label for="typical_sulphur">Typical Sulphur:</label>
+        <input type="text" id="typical_sulphur" value="NaN">
+    </div>
+    <div>
+        <label for="volume">Volume:</label>
+        <input type="text" id="volume" value="NaN">
+    </div>
+    <div>
+        <label for="laycan">Laycan:</label>
+        <input type="text" id="laycan" value="NaN">
+    </div>
+    <div>
+        <label for="port">Port:</label>
+        <input type="text" id="port" value="Vanino/ Vostochny">
+    </div>
+    <div>
+        <label for="status">Status:</label>
+        <input type="text" id="status" value="NaN">
+    </div>
+    <div>
+        <label for="pdf">PDF:</label>
+        <input type="file" id="pdf">
+    </div>
+    <button onclick="submitData()">Submit</button>
 
-  <script src="frontend.js"></script>
+    <script>
+        async function submitData() {
+            const sender = document.getElementById('sender').value;
+            const timestamp = document.getElementById('timestamp').value;
+            const userId = document.getElementById('userId').value;
+            const category = document.getElementById('category').value;
+            const country = document.getElementById('country').value;
+            const mine_name = document.getElementById('mine_name').value;
+            const typical_gar = document.getElementById('typical_gar').value;
+            const typical_ash = document.getElementById('typical_ash').value;
+            const typical_sulphur = document.getElementById('typical_sulphur').value;
+            const volume = document.getElementById('volume').value;
+            const laycan = document.getElementById('laycan').value;
+            const port = document.getElementById('port').value;
+            const status = document.getElementById('status').value;
+            const pdf = document.getElementById('pdf').files[0];
+
+            const formData = new FormData();
+            formData.append('sender', sender);
+            formData.append('timestamp', timestamp);
+            formData.append('user', JSON.stringify({ userId, category }));
+            formData.append('country', country);
+            formData.append('mine_name', mine_name);
+            formData.append('typical_gar', typical_gar);
+            formData.append('typical_ash', typical_ash);
+            formData.append('typical_sulphur', typical_sulphur);
+            formData.append('volume', volume);
+            formData.append('laycan', laycan);
+            formData.append('port', port);
+            formData.append('status', status);
+            formData.append('pdf', pdf);
+
+            try {
+                const response = await fetch('http://localhost:3000/offer_db/offers/create', {
+                    method: 'POST',
+                    headers: {
+                        'x-api-key': 'aniruddhaqwerty1234'
+                    },
+                    body: formData
+                });
+                const data = await response.json();
+                console.log(data);
+            } catch (error) {
+                console.error('Error:', error);
+            }
+        }
+    </script>
 </body>
 </html>

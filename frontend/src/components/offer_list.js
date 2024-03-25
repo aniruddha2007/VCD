@@ -1,5 +1,10 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useRef } from "react";
 import { Link } from "react-router-dom";
+import 'bootstrap/dist/css/bootstrap.min.css';
+import Modal from 'react-modal';
+
+//eslint-disable-next-line
+let modalRoot = null;
 
 const OfferList = (props) => {
   const { record } = props;
@@ -49,18 +54,33 @@ const OfferList = (props) => {
 
 const OfferRecordList = () => {
   const [records, setRecords] = useState([]);
-  const [showModal, setShowModal] = useState(false);
+  const [modalIsOpen, setModalIsOpen] = useState(false);
+  const [pdfFile, setPdfFile] = useState(null);
   const [newOfferData, setNewOfferData] = useState({
     sender: "",
     timestamp: "",
-    min_gar: "",
-    max_gar: "",
-    min_ash: "",
-    max_ash: "",
+    user: {
+      userId: "",
+      category: "",
+    },
+    country: "",
+    mine_name: "",
+    typical_gar: "",
+    typical_ash: "",
+    typical_sulphur: "",
     volume: "",
     laycan: "",
     port: "",
+    status: "",
   });
+
+  const openModal = () => {
+    setModalIsOpen(true);
+  };
+
+  const closeModal = () => {
+    setModalIsOpen(false);
+  };
 
   useEffect(() => {
     async function getOffers() {
@@ -107,9 +127,70 @@ const OfferRecordList = () => {
     }
   }
 
+//new offer form
+async function submitNewOffer() {
+  try {
+    const formData = new FormData();
+    formData.append("sender", newOfferData.sender);
+    formData.append("timestamp", newOfferData.timestamp);
+    formData.append("user", JSON.stringify(newOfferData.user));
+    formData.append("user.userId", newOfferData.user.userId);
+    formData.append("user.category", newOfferData.user.category);
+    formData.append("country", newOfferData.country);
+    formData.append("mine_name", newOfferData.mine_name);
+    formData.append("typical_gar", newOfferData.typical_gar);
+    formData.append("typical_ash", newOfferData.typical_ash);
+    formData.append("typical_sulphur", newOfferData.typical_sulphur);
+    formData.append("volume", newOfferData.volume);
+    formData.append("laycan", newOfferData.laycan);
+    formData.append("port", newOfferData.port);
+    formData.append("status", newOfferData.status);
+    formData.append("pdf", pdfFile); // Append the PDF file
+
+    const response = await fetch(`http://localhost:3000/offer_db/offers/create`, {
+      method: "POST",
+      headers: {
+        "x-api-key": "aniruddhaqwerty1234",
+      },
+      body: formData,
+  });
+
+  if (!response.ok) {
+    throw new Error(`An error occurred: ${response.statusText}`);
+  }
+
+  const result = await response.json();
+  console.log("New Offer created with ID:", result._id);
+
+  //close modal after suyccessful submission
+  closeModal()
+} catch (error) {
+  console.error("Error creating new offer:", error);
+}
+}
+const handlePdfFileChange = (e) => {
+  const file = e.target.files[0];
+  setPdfFile(file);
+};
+
+const modalRootRef = useRef(null);
+
+const modalRoot = modalRootRef.current;
+
+useEffect(()=> {
+if (!modalRoot) {
+  modalRootRef.current = document.createElement("div");
+  modalRootRef.current.id = "modal-root";
+  document.body.appendChild(modalRootRef.current);
+}
+}, [modalRoot]);
+
   return (
     <div>
       <h3>Offer List</h3>
+      <button
+        className="btn btn-primary" data-toggle="modal" onClick={openModal}>New Offer
+      </button>
       <table className="table-striped table" style={{ marginTop: 20 }}>
         <thead>
           <tr>
@@ -137,6 +218,214 @@ const OfferRecordList = () => {
           ))}
         </tbody>
       </table>
+      <Modal
+        isOpen={modalIsOpen}
+        onRequestClose={closeModal}
+        appElement={modalRoot}
+        contentLabel="New Offer"
+        className="modal modal-dialog modal-dialog-centered"
+        tabindex="-1"
+        role="dialog"
+        aria-labelledby="exampleModalLabel"
+        aira-hidden="true"
+      >
+<div className="modal-content">
+  <div className="modal-header">
+    <h5 className="modal-title">New Offer</h5>
+  </div>
+  {/* New Offer Form */}
+  <div className="modal-body">
+    <div className="form-group row">
+      <label htmlFor="sender" className="col-sm-2 col-form-label">Sender:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="sender"
+          value={newOfferData.sender}
+          onChange={(e) => setNewOfferData({ ...newOfferData, sender: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="timestamp" className="col-sm-2 col-form-label">Timestamp:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="timestamp"
+          placeholder="YYYY-MM-DD HH:MM:SS"
+          value={newOfferData.timestamp}
+          onChange={(e) => setNewOfferData({ ...newOfferData, timestamp: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label className="col-sm-2 col-form-label">User ID:</label>
+      <div className="col-sm-4">
+        <input
+          type="text"
+          className="form-control"
+          value={newOfferData.user.userId}
+          onChange={(e) => setNewOfferData({ ...newOfferData, user: { ...newOfferData.user, userId: e.target.value } })}
+        />
+      </div>
+      <label className="col-sm-2 col-form-label">Category:</label>
+      <div className="col-sm-4">
+        <select
+          className="form-control"
+          value={newOfferData.user.category}
+          onChange={(e) => setNewOfferData({ ...newOfferData, user: { ...newOfferData.user, category: e.target.value } })}
+        >
+          <option value="buyer">Buyer</option>
+          <option value="seller">Seller</option>
+          <option value="admin">Admin</option>
+        </select>
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="country" className="col-sm-2 col-form-label">Country:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="country"
+          value={newOfferData.country}
+          onChange={(e) => setNewOfferData({ ...newOfferData, country: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="mine_name" className="col-sm-2 col-form-label">Mine Name:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="mine_name"
+          value={newOfferData.mine_name}
+          onChange={(e) => setNewOfferData({ ...newOfferData, mine_name: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="typical_gar" className="col-sm-2 col-form-label">Typical GAR/GCV:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="typical_gar"
+          value={newOfferData.typical_gar}
+          onChange={(e) => setNewOfferData({ ...newOfferData, typical_gar: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="typical_ash" className="col-sm-2 col-form-label">Typical Ash:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="typical_ash"
+          value={newOfferData.typical_ash}
+          onChange={(e) => setNewOfferData({ ...newOfferData, typical_ash: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="typical_sulphur" className="col-sm-2 col-form-label">Typical Sulphur:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="typical_sulphur"
+          value={newOfferData.typical_sulphur}
+          onChange={(e) => setNewOfferData({ ...newOfferData, typical_sulphur: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="volume" className="col-sm-2 col-form-label">Volume:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="volume"
+          value={newOfferData.volume}
+          onChange={(e) => setNewOfferData({ ...newOfferData, volume: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="laycan" className="col-sm-2 col-form-label">Laycan:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="laycan"
+          value={newOfferData.laycan}
+          onChange={(e) => setNewOfferData({ ...newOfferData, laycan: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="port" className="col-sm-2 col-form-label">Port:</label>
+      <div className="col-sm-10">
+        <input
+          type="text"
+          className="form-control"
+          id="port"
+          value={newOfferData.port}
+          onChange={(e) => setNewOfferData({ ...newOfferData, port: e.target.value })}
+        />
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="status" className="col-sm-2 col-form-label">Status:</label>
+      <div className="col-sm-10">
+        <select
+          className="form-control"
+          id="status"
+          value={newOfferData.status}
+          onChange={(e) => setNewOfferData({ ...newOfferData, status: e.target.value })}
+        >
+          <option value="available">Available</option>
+          <option value="Sold">Sold</option>
+          <option value="Pending">Pending</option>
+          <option value="Expired">Expired</option>
+        </select>
+      </div>
+    </div>
+    <div className="form-group row">
+      <label htmlFor="pdf" className="col-sm-2 col-form-label">PDF:</label>
+      <div className="col-sm-10">
+        <input
+          type="file"
+          className="form-control"
+          id="pdf"
+          accept=".pdf"
+          onChange={handlePdfFileChange}
+        />
+      </div>
+    </div>
+  </div>
+  <div className="modal-footer">
+    <button
+      type="button"
+      className="btn btn-primary"
+      onClick={submitNewOffer}
+    >
+      Submit
+    </button>
+    <button
+      type="button"
+      className="btn btn-secondary"
+      onClick={closeModal}
+    >
+      Cancel
+    </button>
+  </div>
+</div>
+      </Modal>
     </div>
   );
 };

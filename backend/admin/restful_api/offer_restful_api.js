@@ -5,6 +5,10 @@ const {
     MongoClient,
     ObjectId
 } = require("mongodb");
+const multer = require("multer");
+const Offer = require('./offer_model');
+
+const upload = multer({ storage: multer.memoryStorage() }); // Store files in memory
 
 // Replace the uri string with your connection string.
 const uri = "mongodb://localhost:27017";
@@ -14,7 +18,7 @@ const client = new MongoClient(uri);
 collection named 'offer_messages' in the 'offer_db' database. Here is a summary of each operation: */
 //CRUD operations for offer_db/offers
 //Create
-```
+/*
 // Sample request body for creating a new offer message
 {
     "sender": "admin",
@@ -31,10 +35,11 @@ collection named 'offer_messages' in the 'offer_db' database. Here is a summary 
     "volume": "NaN",
     "laycan": "NaN",
     "port": "Vanino/ Vostochny",
-    "status": "NaN"
+    "status": "NaN",
+    "pdf": "PDF data in base64 format"
 }
-```
-router.post('/offers/create', async (req, res, next) => {
+*/
+router.post('/offers/create', upload.single('pdf'), async (req, res, next) => {
     try {
         const {
             sender,
@@ -48,7 +53,9 @@ router.post('/offers/create', async (req, res, next) => {
             volume,
             laycan,
             port,
-            status
+            status,
+            //esline-disable-next-line no-unused-vars
+            pdf
         } = req.body;
 
         // Check if data is complete
@@ -73,6 +80,32 @@ router.post('/offers/create', async (req, res, next) => {
             });
         }
 
+        //check if pdf is present and valid
+        if (!req.file) {
+            return res.status(400).json({
+                error: 'No PDF provided'
+            });
+        }
+        const pdfData = req.file.buffer; // Retrieve PDF data from request buffer
+
+        //Create a new offer with pdf
+        const newOffer = new Offer({
+            sender,
+            timestamp,
+            user,
+            country,
+            mine_name,
+            typical_gar,
+            typical_ash,
+            typical_sulphur,
+            volume,
+            laycan,
+            port,
+            status,
+            pdf: pdfData
+        });
+
+        // Save the new offer to the database
         await client.connect();
         const database = client.db('offer_db');
         const offer_messages = database.collection('offer_messages');
@@ -101,10 +134,9 @@ router.post('/offers/create', async (req, res, next) => {
 
         // If neither user._id nor user.wa_id is present, proceed with insertion
         if (!existingOffer) {
-            const new_offer = req.body;
-            const result = await offer_messages.insertOne(new_offer);
+            const result = await offer_messages.insertOne(newOffer);
 
-            return res.json({
+            return res.status(201).json({
                 id: result.insertedId
             });
         }
