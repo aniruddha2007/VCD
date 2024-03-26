@@ -64,8 +64,9 @@ function authenticateApiKey(req, res, next) {
 
   next();
 }
+aq;
 
-/* The code snippet you provided is setting up health check endpoints for different components of your
+/* The following code snippet is setting up health check endpoints for different components of the
 application, namely Flask, Express, and MongoDB. These endpoints are used to verify the health
 status of each component. */
 // Health check endpoint for Flask

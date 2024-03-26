@@ -104,7 +104,7 @@ def send_whatsapp_document(phone_number, document_url):
         print("An error occurred while sending WhatsApp Document message:", str(e))
         return None
 
-#Get buyer phone number
+#Match user's phone number with their wa_id to determine if they are a buyer or seller
 def get_buyer_phone_number():
     try:
         # Query database
@@ -116,7 +116,7 @@ def get_buyer_phone_number():
         print("An error occurred while fetching buyer phone numbers:", str(e))
         return []
 
-#Get seller phone number
+#Match user's phone number with their wa_id to determine if they are a buyer or seller
 def get_seller_phone_number():
     try:
         # Query database
