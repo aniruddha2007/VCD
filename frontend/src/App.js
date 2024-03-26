@@ -9,6 +9,7 @@ import InquireList from "./components/inquire_list.js";
 import Home from "./components/home.js";
 import ServerActivity from "./components/server_activity.js";
 import SelectedOffer from "./components/selected_offer.js";
+import EditOfferModal from "./components/offer_edit_modal.js";
 // eslint-disable-next-line
 import Test from "./components/test.js";
 
@@ -21,9 +22,10 @@ const App = () => {
         <Route path="/users" element={<UserList />} />
         <Route path="/offers" element={<OfferList />} />
         <Route path="/inquires" element={<InquireList />} />
+        <Route path="/edit_offer" element={<EditOfferModal />} />
         <Route path="/server_activity" element={<ServerActivity />} />
         <Route path="/selected offers" element={<SelectedOffer />} />
-        {/* <Route path="/test" element={<Test />} /> */}
+        <Route path="/test" element={<Test />} />
       </Routes>
     </div>
   );

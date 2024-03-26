@@ -44,14 +44,14 @@ This documentation covers the functionalities, classes, and RESTful API routes p
     - `Sample Data for Line Users`:
       ```json
       {
-        "userId": "U9b8eda58f783af596e2d583b85471290",
+        "userId": "U9b8eda58f783af236e2d583b85471290",
         "category": "buyer"
       }
       ```
     - `Sample Data for Whatsapp Users`:
       ```json
       {
-        "wa_id": "919657060060",
+        "wa_id": "919655660060",
         "category": "seller"
       }
       ```
@@ -166,63 +166,65 @@ This documentation covers the functionalities, classes, and RESTful API routes p
     - `id`: The unique identifier for the offer to be deleted.
   - **Returns**: The deleted offer's data or an error message.
 
-  #### CRUD Operations for Inquires (`inquire_restful_api.js`)
+#### CRUD Operations for Inquires (`inquire_restful_api.js`)
 
-  - **Overview**: Detailed explanation of Create, Read, Update, and Delete operations for inquires, utilizing MongoDB.
+- **Overview**: Detailed explanation of Create, Read, Update, and Deleteoperations for inquires, utilizing MongoDB.
 
-  - **Create Inquire**:
+- **Create Inquire**:
 
-    - **Endpoint**: `/inquires/create`
-    - **Method**: POST
-    - **Purpose**: Creates a new inquire based on the provided data.
-    - **Parameters**:
-      - `new_inquire`: An object containing the new inquire's data.
-      - `Sample Data`:
-        ```json
-        {
-          "sender": "admin",
-          "timestamp": "2024-03-25 10:31:35",
-          "user": {
-            "userId": "ADMIN",
-            "category": "admin"
-          },
-          "country": "Russia",
-          "mine_name": "Elga HCC Select",
-          "typical_gar": "6200",
-          "typical_ash": "16",
-          "typical_sulphur": "NaN",
-          "volume": "NaN",
-          "laycan": "NaN",
-          "port": "Vanino/ Vostochny",
-          "status": "NaN",
-          "pdf": "PDF data in base64 format"
-        }
-        ```
-    - **Returns**: The newly created inquire's ID or an error message.
+- **Endpoint**: `/inquires/create`
+- **Method**: POST
+- **Purpose**: Creates a new inquire based on the provided data.
+- **Parameters**:
+- `new_inquire`: An object containing the new inquire's data.
+- `Sample Data`:
 
-    - **Read Inquires**:
-    - **Endpoint**: `/inquires/read`
-    - **Method**: GET
-    - **Purpose**: Retrieves a list of all inquires.
-    - **Returns**: An array of inquires or an error message.
+```json
+{
+  "sender": "admin",
+  "timestamp": "2024-03-25 10:31:35",
+  "user": {
+    "userId": "ADMIN",
+    "category": "admin"
+  },
+  "country": "Russia",
+  "mine_name": "Elga HCC Select",
+  "typical_gar": "6200",
+  "typical_ash": "16",
+  "typical_sulphur": "NaN",
+  "volume": "NaN",
+  "laycan": "NaN",
+  "port": "Vanino/ Vostochny",
+  "status": "NaN",
+  "pdf": "PDF data in base64 format"
+}
+```
 
-    - **Update Inquire**:
+- **Returns**: The newly created inquire's ID or an error message.
 
-      - **Endpoint**: `/inquires/update/:id`
-      - **Method**: PUT
-      - **Purpose**: Updates an existing inquire's data based on its ID.
-      - **Parameters**:
-        - `id`: The unique identifier for the inquire to be updated.
-        - `updated_inquire`: An object containing the updated inquire's data.
-      - **Returns**: The updated inquire's data or an error message.
+- **Read Inquires**:
+- **Endpoint**: `/inquires/read`
+- **Method**: GET
+- **Purpose**: Retrieves a list of all inquires.
+- **Returns**: An array of inquires or an error message.
 
-      - **Delete Inquire**:
-        - **Endpoint**: `/inquires/delete/:id`
-        - **Method**: DELETE
-        - **Purpose**: Deletes an inquire based on its ID.
-        - **Parameters**:
-          - `id`: The unique identifier for the inquire to be deleted.
-        - **Returns**: The deleted inquire's data or an error message.
+- **Update Inquire**:
+
+- **Endpoint**: `/inquires/update/:id`
+- **Method**: PUT
+- **Purpose**: Updates an existing inquire's data based on its ID.
+- **Parameters**:
+- `id`: The unique identifier for the inquire to be updated.
+- `updated_inquire`: An object containing the updated inquire's data.
+- **Returns**: The updated inquire's data or an error message.
+
+- **Delete Inquire**:
+- **Endpoint**: `/inquires/delete/:id`
+- **Method**: DELETE
+- **Purpose**: Deletes an inquire based on its ID.
+- **Parameters**:
+- `id`: The unique identifier for the inquire to be deleted.
+- **Returns**: The deleted inquire's data or an error message.
 
 ### Additional Notes
 
