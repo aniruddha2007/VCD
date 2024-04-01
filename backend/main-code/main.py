@@ -20,9 +20,9 @@ client = pymongo.MongoClient("mongodb://localhost:27017/")
 user_db = client["user_data"]
 user_collection = user_db["users"]
 
-#for testing ngrok url
-ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
-image_url = f"{ngrok_url}/offers/table.png"
+# #for testing ngrok url
+# ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
+# image_url = f"{ngrok_url}/offers/table.png"
 
 # Create a Flask app
 app = Flask(__name__)
@@ -70,7 +70,7 @@ def send_inquiry_message_to_sellers_line(image_url):
 
 #scheduler functions to run
 def do_shit():
-    ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
+    # ngrok_url = "https://80f1-2001-b011-4008-38c2-cddb-f16f-27f4-fe70.ngrok-free.app/"
 
     # Get unique buyer and seller user IDs
     buyer_user_ids = set(get_buyer_user_ids())
@@ -78,13 +78,13 @@ def do_shit():
 
     # Send offer messages
     for user_id in buyer_user_ids:
-        image_url = f"{ngrok_url}/offers/table.png"
+        image_url = "/offers/table.png"
         send_offer_message_to_buyers_whatsapp(image_url)
         send_offer_message_to_buyers_line(image_url)
 
     # Send inquiry messages
     for user_id in seller_user_ids:
-        image_url = f"{ngrok_url}/inquiries/table.png"
+        image_url = "/inquiries/table.png"
         send_inquiry_message_to_sellers_whatsapp(image_url)
         send_inquiry_message_to_sellers_line(image_url)
 
@@ -102,19 +102,19 @@ scheduler.start()
 #define offer_table route
 @app.route('/offers/table.png')
 def offer_table():
-    image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offers/table.png'  # Update with the correct file path
+    image_path = './offers/table.png'
     return send_file(image_path, mimetype='image/png')
 
 #define inquiry_table route
 @app.route('/inquiries/table.png')
 def inquiry_table():
-    image_path = '/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/inquiries/table.png'  # Update with the correct file path
+    image_path = './inquiries/table.png'
     return send_file(image_path, mimetype='image/png')
 
 #define COA pdf route
 @app.route('/offer/coa/<order_id>.pdf')
 def coa_pdf(order_id):
-    return send_file(f'/Users/aniruddhapandit/Library/CloudStorage/Dropbox/PROJECT/Virtuit/VCD/backend/offer/coa/{order_id}.pdf', mimetype='application/pdf')
+    return send_file(f'./offer/coa/{order_id}.pdf', mimetype='application/pdf')
 
 #Flask route to check if the server is running
 @app.route('/api/v1/health', methods=['GET'])
@@ -128,4 +128,4 @@ if __name__ == '__main__':
     #generate_inquiry_table()
     #generate_offer_table()
     # Run the Flask app
-    app.run(debug=True)
+    app.run(host='0.0.0.0', port=5000, debug=True)

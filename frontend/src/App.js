@@ -10,6 +10,7 @@ import Home from "./components/home.js";
 import ServerActivity from "./components/server_activity.js";
 import SelectedOffer from "./components/selected_offer.js";
 import EditOfferModal from "./components/offer_edit_modal.js";
+import CreateNewUser from "./components/User/create_user.js";
 // eslint-disable-next-line
 import Test from "./components/test.js";
 
@@ -25,6 +26,7 @@ const App = () => {
         <Route path="/edit_offer" element={<EditOfferModal />} />
         <Route path="/server_activity" element={<ServerActivity />} />
         <Route path="/selected offers" element={<SelectedOffer />} />
+        <Route path="/create_new_user" element={<CreateNewUser />} />
         <Route path="/test" element={<Test />} />
       </Routes>
     </div>

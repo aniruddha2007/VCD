@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
 import "bootstrap/dist/css/bootstrap.min.css";
 import Modal from "react-modal";
+import EditOfferModal from "./offer_edit_modal";
 
 //eslint-disable-next-line
 let modalRoot = null;
@@ -28,6 +29,11 @@ const OfferList = (props) => {
     }
   };
 
+  const openEditOfferModal = () => {
+    console.log("Edit offer modal opened");
+    EditOfferModal(record._id);
+  };
+
   return (
     <tr>
       <td>{record.sender || record.user_id}</td>
@@ -48,14 +54,14 @@ const OfferList = (props) => {
           Download
         </button>
       </td>
-      {/* <td>
+      <td>
         <button
           className="btn btn-link"
-          onClick={() => handleEditOffer(record._id)}
+          onClick={() => openEditOfferModal(record._id)}
         >
           Edit
         </button>
-      </td> */}
+      </td>
       <td>
         <button
           className="btn btn-link"

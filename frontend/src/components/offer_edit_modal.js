@@ -12,7 +12,6 @@ const EditOfferModal = ({
       userId: " ",
       category: " ",
     },
-    country: " ",
     mine_name: " ",
     typical_gar: " ",
     typical_ash: " ",
