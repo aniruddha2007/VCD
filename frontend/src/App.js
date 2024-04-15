@@ -1,33 +1,39 @@
 import React from "react";
-import { Route, Routes } from "react-router-dom";
-
-// Import the components
-import Navbar from "./components/navbar.js";
-import UserList from "./components/user_list.js";
-import OfferList from "./components/offer_list.js";
-import InquireList from "./components/inquire_list.js";
-import Home from "./components/home.js";
-import ServerActivity from "./components/server_activity.js";
-import SelectedOffer from "./components/selected_offer.js";
-import EditOfferModal from "./components/offer_edit_modal.js";
-import CreateNewUser from "./components/User/create_user.js";
-// eslint-disable-next-line
-import Test from "./components/test.js";
+import { Routes, Route } from "react-router-dom";
+import Navbar from "./components/navbar";
+import Home from "./components/home";
+// import Login from "./components/Authentication/login";
+// import Register from "./components/Authentication/register";
+// import { AuthProvider } from "./components/Authentication/AuthContext";
+import UserList from "./components/User/user_list";
+import OfferList from "./components/Offer/offer_list";
+import InquireList from "./components/Inquiry/inquire_list";
+import ServerActivity from "./components/server_activity";
+import SelectedOffer from "./components/selected_offer";
+import EditOfferModal from "./components/Offer/offer_edit_modal";
+import CreateNewUser from "./components/User/create_user";
 
 const App = () => {
   return (
     <div>
       <Navbar />
       <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/users" element={<UserList />} />
-        <Route path="/offers" element={<OfferList />} />
-        <Route path="/inquires" element={<InquireList />} />
-        <Route path="/edit_offer" element={<EditOfferModal />} />
-        <Route path="/server_activity" element={<ServerActivity />} />
-        <Route path="/selected offers" element={<SelectedOffer />} />
-        <Route path="/create_new_user" element={<CreateNewUser />} />
-        <Route path="/test" element={<Test />} />
+        <Route path="/" element={<Home />} />{" "}
+        {/* UsePrivateRoute instead of Route */}
+        <Route path="/users" element={<UserList />} />{" "}
+        {/* UsePrivateRoute instead of Route */}
+        <Route path="/offers" element={<OfferList />} />{" "}
+        {/* UsePrivateRoute instead of Route */}
+        <Route path="/inquires" element={<InquireList />} />{" "}
+        {/* UsePrivateRoute instead of Route */}
+        <Route path="/edit-offer" element={<EditOfferModal />} />{" "}
+        {/* UsePrivateRoute instead of Route */}
+        <Route path="/server-activity" element={<ServerActivity />} />{" "}
+        {/* Use PrivateRoute instead of Route */}
+        <Route path="/selected-offers" element={<SelectedOffer />} />{" "}
+        {/* Use PrivateRoute instead of Route */}
+        <Route path="/create-new-user" element={<CreateNewUser />} />{" "}
+        {/* Use PrivateRoute instead of Route */}
       </Routes>
     </div>
   );

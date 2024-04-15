@@ -4,6 +4,7 @@ const offer_api = require("./offer_restful_api");
 const user_api = require("./user_restful_api");
 const inquire_api = require("./inquire_restful_api");
 const offer_coa_upload_api = require("./offer_coa_upload_restful_api");
+const authRoutes = require("./auth_restful_api");
 const cors = require("cors");
 const axios = require("axios");
 const mongoose = require("mongoose");
@@ -22,7 +23,12 @@ mongoose
 // Create a new express application
 const app = express();
 app.use(bodyParser.json());
-app.use(cors());
+app.use(
+  cors({
+    methods: ["GET", "POST", "PUT", "DELETE"], // Add 'PUT' to allow the UPDATE method
+  }),
+);
+app.use("/authentication", authRoutes);
 
 /**
  * The function `authenticateApiKey` is a middleware used for API key authentication in a Node.js
@@ -120,6 +126,7 @@ app.use("/offer_db", offer_api);
 app.use("/user_data", user_api);
 app.use("/inquire_db", inquire_api);
 app.use("/offer_coa_upload", offer_coa_upload_api);
+app.use("/auth", authRoutes);
 
 // Error handling middleware
 app.use((err, req, res, next) => {
