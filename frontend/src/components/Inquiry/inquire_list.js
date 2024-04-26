@@ -1,10 +1,32 @@
 import React, { useEffect, useState } from "react";
+import { useRef } from "react";
 import { Link } from "react-router-dom";
 import CreateInquire from "./create_inquire";
 import EditInquire from "./edit_inquire";
 
 const InquireList = (props) => {
   const { record } = props;
+  const [isEditInquireOpen, setIsEditInquireOpen] = useState(false);
+
+  useEffect(() => {
+    const handleKeyDown = (event) => {
+      if (event.keyCode === 27 && isEditInquireOpen) {
+        closeEditInquireModal();
+      }
+    };
+    document.addEventListener("keydown", handleKeyDown);
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+    };
+  }, [isEditInquireOpen]);
+
+  const openEditInquireModal = () => {
+    setIsEditInquireOpen(true);
+  };
+
+  const closeEditInquireModal = () => {
+    setIsEditInquireOpen(false);
+  };
 
   // Check if record is defined and has the expected structure
   if (!record || (!record.sender && !record.user_id)) {
@@ -34,13 +56,15 @@ const InquireList = (props) => {
       <td>
         <button className="btn btn-link" onClick={EditInquire}>
           Edit
-          </button>
-          {isEditInquireOpen && (
-            <EditInquire
-              editingInquireId={record._id
-              closeModal={closeEditInquireModal}
-              />
-        |
+        </button>
+        {isEditInquireOpen && (
+          <EditInquire
+            editingInquireId={record._id}
+            closeModal={closeEditInquireModal}
+          />
+        )}
+      </td>
+      <td>
         <button
           className="btn btn-link"
           onClick={() => {
@@ -100,6 +124,17 @@ const InquireRecordList = () => {
       console.error(error);
     }
   }
+
+  const modalRootRef = useRef(null);
+  const modalRoot = modalRootRef.current;
+
+  useEffect(() => {
+    if (!modalRoot) {
+      modalRootRef.current = document.createElement("div");
+      modalRootRef.current.id = "modal-root";
+      document.body.appendChild(modalRootRef.current);
+    }
+  }, [modalRoot]);
 
   return (
     <div>
